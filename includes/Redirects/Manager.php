@@ -1,0 +1,67 @@
+<?php
+
+namespace NovaToolsSEO\Redirects;
+
+use NovaToolsSEO\Traits\Base;
+
+class Manager {
+
+	use Base;
+
+	public function init() {
+		add_action( 'plugins_loaded', array( $this, 'check_redirects' ), 1 );
+	}
+
+	public function check_redirects() {
+		if ( is_admin() || defined( 'DOING_CRON' ) || defined( 'DOING_AJAX' ) ) {
+			return;
+		}
+
+		$request_uri = $this->get_request_path();
+
+		if ( empty( $request_uri ) || '/' === $request_uri ) {
+			return;
+		}
+
+		global $wpdb;
+		$table = $wpdb->prefix . 'wseo_redirects';
+
+		$table_exists = $wpdb->get_var( "SHOW TABLES LIKE '{$table}'" );
+		if ( ! $table_exists ) {
+			return;
+		}
+
+		$redirects = $wpdb->get_results( "SELECT * FROM {$table}" );
+
+		foreach ( $redirects as $redirect ) {
+			$matched = false;
+
+			if ( $redirect->is_regex ) {
+				if ( @preg_match( $redirect->source_url, $request_uri ) ) {
+					$matched = true;
+					$destination = @preg_replace( $redirect->source_url, $redirect->destination_url, $request_uri );
+				}
+			} else {
+				if ( trailingslashit( $request_uri ) === trailingslashit( $redirect->source_url ) ) {
+					$matched = true;
+					$destination = $redirect->destination_url;
+				}
+			}
+
+			if ( $matched && ! empty( $destination ) ) {
+				$status_code = (int) $redirect->status_code;
+				if ( ! in_array( $status_code, array( 301, 302, 303, 307, 308 ), true ) ) {
+					$status_code = 301;
+				}
+
+				wp_redirect( esc_url_raw( $destination ), $status_code );
+				exit;
+			}
+		}
+	}
+
+	private function get_request_path() {
+		$parsed = wp_parse_url( $_SERVER['REQUEST_URI'] ?? '' );
+		return $parsed['path'] ?? '';
+	}
+}

@@ -1,0 +1,18 @@
+{
+  "name": "novatools/novatools-seo",
+  "description": "Comprehensive SEO add-on for NovaTools.",
+  "autoload": {
+    "psr-4": {
+      "NovaToolsSEO\\": "includes/",
+      "NovaToolsSEO\\Database\\": "database/",
+      "NovaToolsSEO\\Libs\\": "libs/"
+    },
+    "files": [
+      "includes/functions.php",
+      "libs/assets.php"
+    ]
+  },
+  "require": {
+    "php": ">=7.4"
+  }
+}
