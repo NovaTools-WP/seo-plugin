@@ -3,6 +3,9 @@
 namespace NovaToolsSEO\Admin;
 
 use NovaToolsSEO\Traits\Base;
+use NovaToolsSEO\Core\DependencyCheck;
+use NovaToolsSEO\Libs\Assets;
+use NovaToolsSEO\Assets\Admin as AssetsAdmin;
 
 class MetaBox {
 
@@ -38,7 +41,7 @@ class MetaBox {
 
 		wp_nonce_field( 'novatools_seo_save_meta', 'novatools_seo_nonce' );
 
-		echo '<div id="novatools-seo-meta-box" data-post-id="' . esc_attr( $post->ID ) . '" data-permalink="' . esc_url( $permalink ) . '" data-meta="' . esc_attr( wp_json_encode( $meta ) ) . '"></div>';
+		echo '<div id="wseo-react-meta-box" data-post-id="' . esc_attr( $post->ID ) . '" data-permalink="' . esc_url( $permalink ) . '" data-meta="' . esc_attr( wp_json_encode( $meta ) ) . '"></div>';
 	}
 
 	public function render_term_meta_box( $tag, $taxonomy ) {
@@ -80,7 +83,7 @@ class MetaBox {
 			return;
 		}
 
-		$fields = array( '_wseo_title', '_wseo_description', '_wseo_canonical', '_wseo_robots', '_wseo_og_title', '_wseo_og_description', '_wseo_og_image', '_wseo_twitter_card', '_wseo_twitter_title', '_wseo_twitter_description', '_wseo_twitter_image' );
+		$fields = array( '_wseo_title', '_wseo_description', '_wseo_canonical', '_wseo_robots', '_wseo_og_title', '_wseo_og_description', '_wseo_og_image', '_wseo_twitter_card', '_wseo_twitter_title', '_wseo_twitter_description', '_wseo_twitter_image', '_wseo_local_business' );
 
 		foreach ( $fields as $field ) {
 			if ( isset( $_POST[ $field ] ) ) {
@@ -104,11 +107,38 @@ class MetaBox {
 			return;
 		}
 
-		// The admin bundle handles meta box rendering when the container exists
+		$manifest_dir = NOVATOOLS_SEO_DIR . '/assets/admin/dist';
+
+		if ( DependencyCheck::is_novatools_active() ) {
+			// In addon mode, the main bundle is not loaded on post pages.
+			// Load it separately to mount the SeoMetaBox component.
+			Assets\enqueue_asset(
+				$manifest_dir,
+				'src/admin/main.jsx',
+				array(
+					'dependencies' => array( 'react', 'react-dom' ),
+					'handle'       => AssetsAdmin::HANDLE . '-metabox',
+					'in-footer'    => true,
+				)
+			);
+
+			wp_localize_script( AssetsAdmin::HANDLE . '-metabox', AssetsAdmin::OBJ_NAME, AssetsAdmin::get_instance()->get_data() );
+		} else {
+			// Standalone mode: enqueue the main script if not already loaded.
+			if ( ! wp_script_is( AssetsAdmin::HANDLE, 'enqueued' ) ) {
+				Assets\enqueue_asset(
+					$manifest_dir,
+					'src/admin/main.jsx',
+					AssetsAdmin::get_instance()->get_config()
+				);
+
+				wp_localize_script( AssetsAdmin::HANDLE, AssetsAdmin::OBJ_NAME, AssetsAdmin::get_instance()->get_data() );
+			}
+		}
 	}
 
 	private function get_post_seo_data( $post_id ) {
-		$keys = array( '_wseo_title', '_wseo_description', '_wseo_canonical', '_wseo_robots', '_wseo_og_title', '_wseo_og_description', '_wseo_og_image', '_wseo_twitter_card', '_wseo_twitter_title', '_wseo_twitter_description', '_wseo_twitter_image' );
+		$keys = array( '_wseo_title', '_wseo_description', '_wseo_canonical', '_wseo_robots', '_wseo_og_title', '_wseo_og_description', '_wseo_og_image', '_wseo_twitter_card', '_wseo_twitter_title', '_wseo_twitter_description', '_wseo_twitter_image', '_wseo_local_business', '_thumbnail_id' );
 
 		$data = array();
 		foreach ( $keys as $key ) {

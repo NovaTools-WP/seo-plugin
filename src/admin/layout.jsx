@@ -7,7 +7,11 @@ const navItems = [
   { path: "/sitemaps", label: "Sitemaps" },
   { path: "/social-media", label: "Social Media" },
   { path: "/redirects", label: "Redirects" },
+  { path: "/local-seo", label: "Local SEO" },
+  { path: "/integrations", label: "Integrations" },
+  { path: "/woo-seo", label: "WooCommerce SEO" },
   { path: "/tools", label: "Tools" },
+  { path: "/geo", label: "GEO" },
 ];
 
 export default function Layout({ children }) {

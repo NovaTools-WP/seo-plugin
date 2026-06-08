@@ -3,6 +3,7 @@
 namespace NovaToolsSEO\Sitemaps;
 
 use NovaToolsSEO\Traits\Base;
+use NovaToolsSEO\WooCommerce\Taxonomy\TaxonomyNoindexRepository;
 
 class Generator {
 
@@ -22,7 +23,7 @@ class Generator {
 
 	public function add_rewrite_rules() {
 		add_rewrite_rule( '^sitemap\.xml$', 'index.php?wseo_sitemap=index', 'top' );
-		add_rewrite_rule( '^sitemap-([a-z]+)\.xml$', 'index.php?wseo_sitemap=$matches[1]', 'top' );
+		add_rewrite_rule( '^sitemap-([a-z_]+)\.xml$', 'index.php?wseo_sitemap=$matches[1]', 'top' );
 	}
 
 	public function add_query_vars( $vars ) {
@@ -84,12 +85,16 @@ class Generator {
 
 		$post_types = $this->get_sitemap_post_types();
 		foreach ( $post_types as $post_type ) {
-			$child_sitemaps[] = $url . 'sitemap-' . $post_type . '.xml';
+			if ( $this->post_type_has_entries( $post_type ) ) {
+				$child_sitemaps[] = $url . 'sitemap-' . $post_type . '.xml';
+			}
 		}
 
 		$taxonomies = $this->get_sitemap_taxonomies();
 		foreach ( $taxonomies as $taxonomy ) {
-			$child_sitemaps[] = $url . 'sitemap-' . $taxonomy . '.xml';
+			if ( $this->taxonomy_has_entries( $taxonomy ) ) {
+				$child_sitemaps[] = $url . 'sitemap-' . $taxonomy . '.xml';
+			}
 		}
 
 		$xml = '<?xml version="1.0" encoding="UTF-8"?>' . "\n";
@@ -108,22 +113,41 @@ class Generator {
 	}
 
 	private function get_child_sitemap_xml( $type ) {
+		$is_product = ( 'product' === $type );
+
 		$xml = '<?xml version="1.0" encoding="UTF-8"?>' . "\n";
-		$xml .= '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">' . "\n";
+		$xml .= '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"';
+		if ( $is_product ) {
+			$xml .= ' xmlns:image="http://www.google.com/schemas/sitemap-image/1.1"';
+		}
+		$xml .= '>' . "\n";
 
 		$excluded_ids = $this->get_excluded_ids();
 
 		$post_types = $this->get_sitemap_post_types();
 		if ( in_array( $type, $post_types, true ) ) {
-			$posts = get_posts( array(
-				'post_type'      => $type,
-				'posts_per_page' => 1000,
-				'post_status'    => 'publish',
-				'post__not_in'   => $excluded_ids,
-			) );
+			$offset = 0;
+			$batch_size = 1000;
 
-			foreach ( $posts as $post ) {
-				$xml .= $this->get_url_entry( get_permalink( $post ), $post->post_modified_gmt, 'weekly', $this->get_priority( $type ) );
+			while ( true ) {
+				$posts = get_posts( array(
+					'post_type'      => $type,
+					'posts_per_page' => $batch_size,
+					'offset'         => $offset,
+					'post_status'    => 'publish',
+					'post__not_in'   => $excluded_ids,
+				) );
+
+				if ( empty( $posts ) ) {
+					break;
+				}
+
+				foreach ( $posts as $post ) {
+					$product_id = $is_product ? $post->ID : 0;
+					$xml .= $this->get_url_entry( get_permalink( $post ), $post->post_modified_gmt, 'weekly', $this->get_priority( $type ), $product_id );
+				}
+
+				$offset += $batch_size;
 			}
 		}
 
@@ -146,15 +170,81 @@ class Generator {
 		return $xml;
 	}
 
-	private function get_url_entry( $url, $lastmod, $changefreq, $priority ) {
+	private function get_url_entry( $url, $lastmod, $changefreq, $priority, $product_id = 0 ) {
 		$entry = '  <url>' . "\n";
 		$entry .= '    <loc>' . esc_url( $url ) . '</loc>' . "\n";
 		$entry .= '    <lastmod>' . esc_html( date( 'c', strtotime( $lastmod ) ) ) . '</lastmod>' . "\n";
 		$entry .= '    <changefreq>' . esc_html( $changefreq ) . '</changefreq>' . "\n";
 		$entry .= '    <priority>' . esc_html( $priority ) . '</priority>' . "\n";
+
+		if ( $product_id > 0 && function_exists( 'wc_get_page_id' ) ) {
+			$entry .= $this->get_image_entries( $product_id );
+		}
+
 		$entry .= '  </url>' . "\n";
 
 		return $entry;
+	}
+
+	private function get_image_entries( $product_id ) {
+		$image_ids = array();
+
+		$thumbnail_id = (int) get_post_meta( $product_id, '_thumbnail_id', true );
+		if ( $thumbnail_id > 0 ) {
+			$image_ids[] = $thumbnail_id;
+		}
+
+		$gallery = get_post_meta( $product_id, '_product_image_gallery', true );
+		if ( ! empty( $gallery ) ) {
+			$gallery_ids = array_filter( array_map( 'absint', explode( ',', $gallery ) ) );
+			$image_ids = array_merge( $image_ids, $gallery_ids );
+		}
+
+		$product = wc_get_product( $product_id );
+		if ( $product && $product->is_type( 'variable' ) ) {
+			$variations = $product->get_children();
+			foreach ( $variations as $variation_id ) {
+				$variation = wc_get_product( $variation_id );
+				if ( $variation && 'publish' === $variation->get_status() ) {
+					$var_image = (int) get_post_meta( $variation_id, '_thumbnail_id', true );
+					if ( $var_image > 0 ) {
+						$image_ids[] = $var_image;
+					}
+				}
+			}
+		}
+
+		$image_ids = array_unique( $image_ids );
+
+		$xml = '';
+		foreach ( $image_ids as $attachment_id ) {
+			$xml .= $this->get_image_xml( $attachment_id );
+		}
+
+		return $xml;
+	}
+
+	private function get_image_xml( $attachment_id ) {
+		$url = wp_get_attachment_url( $attachment_id );
+		if ( ! $url ) {
+			return '';
+		}
+
+		$attachment = get_post( $attachment_id );
+		$title = $attachment ? get_the_title( $attachment ) : '';
+		$caption = $attachment ? get_the_excerpt( $attachment ) : '';
+
+		$xml = '    <image:image>' . "\n";
+		$xml .= '      <image:loc>' . esc_url( $url ) . '</image:loc>' . "\n";
+		if ( $title ) {
+			$xml .= '      <image:title>' . esc_html( $title ) . '</image:title>' . "\n";
+		}
+		if ( $caption ) {
+			$xml .= '      <image:caption>' . esc_html( $caption ) . '</image:caption>' . "\n";
+		}
+		$xml .= '    </image:image>' . "\n";
+
+		return $xml;
 	}
 
 	private function get_priority( $post_type ) {
@@ -174,7 +264,15 @@ class Generator {
 	}
 
 	private function get_sitemap_taxonomies() {
-		return get_taxonomies( array( 'public' => true ) );
+		$taxonomies = get_taxonomies( array( 'public' => true ) );
+
+		if ( class_exists( 'WooCommerce' ) ) {
+			$repo = TaxonomyNoindexRepository::get_instance();
+			$noindexed = $repo->get_noindexed_taxonomies();
+			$taxonomies = array_diff( $taxonomies, $noindexed );
+		}
+
+		return array_values( $taxonomies );
 	}
 
 	private function get_excluded_ids() {
@@ -187,9 +285,73 @@ class Generator {
 					$ids[] = $page_id;
 				}
 			}
+
+			$ids = array_merge( $ids, $this->get_outofstock_ids() );
 		}
 
 		return $ids;
+	}
+
+	private function post_type_has_entries( $post_type ) {
+		$args = array(
+			'post_type'      => $post_type,
+			'posts_per_page' => 1,
+			'post_status'    => 'publish',
+			'fields'         => 'ids',
+		);
+
+		if ( 'product' === $post_type ) {
+			$args['post__not_in'] = $this->get_excluded_ids();
+		}
+
+		return get_posts( $args ) ? true : false;
+	}
+
+	private function taxonomy_has_entries( $taxonomy ) {
+		$count = wp_count_terms( array(
+			'taxonomy'   => $taxonomy,
+			'hide_empty' => true,
+		) );
+
+		return $count > 0;
+	}
+
+	private function get_outofstock_ids() {
+		if ( ! function_exists( 'wc_get_page_id' ) ) {
+			return array();
+		}
+
+		$threshold = (int) get_option( 'wseo_outofstock_threshold', 30 );
+
+		$args = array(
+			'post_type'      => 'product',
+			'posts_per_page' => -1,
+			'post_status'    => 'publish',
+			'fields'         => 'ids',
+			'meta_query'     => array(
+				array(
+					'key'   => '_stock_status',
+					'value' => 'outofstock',
+				),
+			),
+		);
+
+		if ( $threshold > 0 ) {
+			$cutoff = time() - ( $threshold * DAY_IN_SECONDS );
+			$args['meta_query'][] = array(
+				'key'     => '_wseo_outofstock_since',
+				'value'   => $cutoff,
+				'compare' => '<',
+				'type'    => 'NUMERIC',
+			);
+		} else {
+			$args['meta_query'][] = array(
+				'key'     => '_wseo_outofstock_since',
+				'compare' => 'EXISTS',
+			);
+		}
+
+		return get_posts( $args );
 	}
 
 	private function build_index( $dir ) {

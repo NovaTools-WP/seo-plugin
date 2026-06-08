@@ -71,11 +71,15 @@ class Admin {
 
 	public function get_data() {
 		return array(
-			'apiUrl'    => rest_url(),
-			'isAdmin'   => is_admin(),
-			'version'   => NOVATOOLS_SEO_VERSION,
-			'nonce'     => wp_create_nonce( 'wp_rest' ),
-			'postTypes' => $this->get_public_post_types(),
+			'apiUrl'         => rest_url(),
+			'siteUrl'        => home_url( '/' ),
+			'isAdmin'        => is_admin(),
+			'version'        => NOVATOOLS_SEO_VERSION,
+			'nonce'          => wp_create_nonce( 'wp_rest' ),
+			'postTypes'      => $this->get_public_post_types(),
+			'hasWooCommerce'        => function_exists( 'wc_get_page_id' ),
+			'hasYoast'               => class_exists( 'WPSEO_Options' ),
+			'actionSchedulerAvailable' => class_exists( 'ActionScheduler' ),
 		);
 	}
 

@@ -3,6 +3,8 @@ import * as api from "../api";
 
 const LOG_TYPES = ["", "yoast_import", "license", "general"];
 
+const hasYoast = window.novaToolsSEO?.hasYoast;
+
 export default function Tools() {
   return (
     <div>
@@ -12,8 +14,12 @@ export default function Tools() {
       </p>
       <div className="space-y-8">
         <ExportImportSection />
-        <hr className="border-gray-200" />
-        <YoastImportSection />
+        {hasYoast && (
+          <>
+            <hr className="border-gray-200" />
+            <YoastImportSection />
+          </>
+        )}
         <hr className="border-gray-200" />
         <LogViewerSection />
       </div>
@@ -105,36 +111,53 @@ function YoastImportSection() {
   const [migrating, setMigrating] = useState(false);
   const [progress, setProgress] = useState(null);
   const [message, setMessage] = useState("");
-  const pollRef = useRef(null);
+  const cancelledRef = useRef(false);
 
   useEffect(() => {
     return () => {
-      if (pollRef.current) clearInterval(pollRef.current);
+      cancelledRef.current = true;
     };
   }, []);
 
   async function startImport() {
     setStarting(true);
     setMessage("");
+    cancelledRef.current = false;
     try {
       const res = await api.post("/yoast-import/start", {});
-      setMessage(res.message || "Import started.");
-      if (res.total > 0) {
-        pollRef.current = setInterval(async () => {
-          try {
-            const p = await api.get("/yoast-import/progress");
-            setProgress(p);
-            if (p.percentage >= 100) {
-              clearInterval(pollRef.current);
-              pollRef.current = null;
-              setMessage("Import complete.");
-            }
-          } catch {
-            clearInterval(pollRef.current);
-          }
-        }, 2000);
+      if (res.total === 0) {
+        setMessage(res.message || "No Yoast SEO data found.");
+        setStarting(false);
+        return;
       }
-    } catch (e) {
+      setProgress({ total: res.total, progress: 0, percentage: 0 });
+      setMessage("Importing...");
+
+      const batchSize = 50;
+      let offset = 0;
+
+      while (offset < res.total && !cancelledRef.current) {
+        try {
+          const batch = await api.post("/yoast-import/process-batch", {
+            offset,
+            limit: batchSize,
+          });
+          const done = batch.progress || offset + batch.processed;
+          const pct = Math.min(Math.round((done / res.total) * 1000) / 10, 100);
+          setProgress({ total: res.total, progress: done, percentage: pct });
+
+          if (batch.processed === 0) break;
+          offset += batch.processed;
+        } catch {
+          setMessage("Error during import batch.");
+          break;
+        }
+      }
+
+      if (!cancelledRef.current) {
+        setMessage("Import complete.");
+      }
+    } catch {
       setMessage("Error starting import.");
     }
     setStarting(false);

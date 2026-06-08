@@ -9,11 +9,12 @@ $wpdb->query( "DROP TABLE IF EXISTS {$wpdb->prefix}wseo_logs" );
 
 $wpdb->query(
 	$wpdb->prepare(
-		"DELETE FROM {$wpdb->options} WHERE option_name LIKE %s OR option_name LIKE %s OR option_name LIKE %s OR option_name LIKE %s",
+		"DELETE FROM {$wpdb->options} WHERE option_name LIKE %s OR option_name LIKE %s OR option_name LIKE %s OR option_name LIKE %s OR option_name LIKE %s",
 		'wseo_general_%',
 		'wseo_sitemap_%',
 		'wseo_social_%',
-		'wseo_license_%'
+		'wseo_license_%',
+		'wseo_gmc_%'
 	)
 );
 
@@ -32,3 +33,6 @@ delete_post_meta_by_key( '_wseo_twitter_image' );
 wp_clear_scheduled_hook( 'wseo_sitemap_rebuild' );
 wp_clear_scheduled_hook( 'wseo_license_check' );
 wp_clear_scheduled_hook( 'wseo_yoast_import' );
+wp_clear_scheduled_hook( 'wseo_gmc_push_product' );
+wp_clear_scheduled_hook( 'wseo_gmc_sync_batch' );
+wp_clear_scheduled_hook( 'wseo_gmc_recurring_sync' );

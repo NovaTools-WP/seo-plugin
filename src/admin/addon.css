@@ -1,0 +1,23 @@
+/*
+ * Scoped styles for the WooCommerce product data "SEO & Schema" tab.
+ *
+ * Intentionally omits @tailwind base (Preflight reset) to avoid breaking
+ * WooCommerce admin styles on the rest of the product edit page.
+ */
+
+/* ---------- scoped base ---------- */
+
+#wseo-product-schema-tab {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --radius: 0.5rem;
+}
+
+#wseo-product-schema-tab *,
+#wseo-product-schema-tab *::before,
+#wseo-product-schema-tab *::after {
+  box-sizing: border-box;
+  border: 0 solid #e5e7eb;
+}
+
+@tailwind components;
+@tailwind utilities;

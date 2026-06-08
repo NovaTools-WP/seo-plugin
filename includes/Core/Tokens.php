@@ -23,11 +23,12 @@ class Tokens {
 		$name = get_bloginfo( 'name' );
 
 		$values = array(
-			'%%sitename%%' => $name,
-			'%%sep%%'      => $sep,
-			'%%page%%'     => '',
-			'%%category%%' => '',
-			'%%title%%'    => '',
+			'%%sitename%%'  => $name,
+			'%%sitedesc%%'  => get_bloginfo( 'description' ),
+			'%%sep%%'       => $sep,
+			'%%page%%'      => '',
+			'%%category%%'  => '',
+			'%%title%%'     => '',
 		);
 
 		if ( $post ) {

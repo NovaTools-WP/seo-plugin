@@ -7,8 +7,13 @@ import GeneralSettings from "./pages/GeneralSettings";
 import Sitemaps from "./pages/Sitemaps";
 import SocialMedia from "./pages/SocialMedia";
 import RedirectManager from "./pages/RedirectManager";
+import LocalSEO from "./pages/LocalSEO";
+import Integrations from "./pages/Integrations";
+import WooCommerceSEO from "./pages/WooCommerceSEO";
 import Tools from "./pages/Tools";
+import GEO from "./pages/GEO";
 import SeoMetaBox from "./components/seo-meta-box/SeoMetaBox";
+import ProductSeoTab from "./components/product-seo-tab/ProductSeoTab";
 import "./index.css";
 
 const container = document.getElementById("novatools-seo-app");
@@ -23,7 +28,11 @@ if (container) {
           <Route path="/sitemaps" element={<Sitemaps />} />
           <Route path="/social-media" element={<SocialMedia />} />
           <Route path="/redirects" element={<RedirectManager />} />
+          <Route path="/local-seo" element={<LocalSEO />} />
+          <Route path="/integrations" element={<Integrations />} />
+          <Route path="/woo-seo" element={<WooCommerceSEO />} />
           <Route path="/tools" element={<Tools />} />
+          <Route path="/geo" element={<GEO />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </Layout>
@@ -31,8 +40,14 @@ if (container) {
   );
 }
 
-const metaBoxContainer = document.getElementById("novatools-seo-meta-box");
+const metaBoxContainer = document.getElementById("wseo-react-meta-box");
 if (metaBoxContainer) {
   const root = createRoot(metaBoxContainer);
   root.render(<SeoMetaBox />);
+}
+
+const productTabContainer = document.getElementById("wseo-product-schema-tab");
+if (productTabContainer) {
+  const root = createRoot(productTabContainer);
+  root.render(<ProductSeoTab />);
 }

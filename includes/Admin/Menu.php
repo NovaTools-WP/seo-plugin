@@ -37,7 +37,11 @@ class Menu {
 			array( 'path' => 'seo/sitemaps',         'component' => 'Sitemaps' ),
 			array( 'path' => 'seo/social-media',      'component' => 'SocialMedia' ),
 			array( 'path' => 'seo/redirects',         'component' => 'RedirectManager' ),
+			array( 'path' => 'seo/local-seo',         'component' => 'LocalSEO' ),
+			array( 'path' => 'seo/integrations',      'component' => 'Integrations' ),
+			array( 'path' => 'seo/woo-seo',           'component' => 'WooCommerceSEO' ),
 			array( 'path' => 'seo/tools',             'component' => 'Tools' ),
+			array( 'path' => 'seo/geo',               'component' => 'GEO' ),
 		);
 
 		foreach ( $sub_routes as $sub ) {

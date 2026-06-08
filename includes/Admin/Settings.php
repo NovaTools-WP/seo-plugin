@@ -50,9 +50,28 @@ class Settings {
 			'wseo_social_og_default_image'   => '',
 			'wseo_social_twitter_card_type'  => 'summary_large_image',
 			'wseo_social_twitter_site'       => '',
+			'wseo_social_pinterest_rich_pins' => '1',
 			'wseo_sitemap_enabled'           => '1',
+			'wseo_outofstock_threshold'      => '30',
 			'wseo_robots_txt_content'        => '',
 			'wseo_license_key'               => '',
+			'wseo_indexnow_enabled'          => '',
+			'wseo_indexnow_api_key'          => '',
+			'wseo_ai_bot_rules'              => array(
+				'preset_bots' => array(),
+				'custom_bots' => array(),
+				'path_rules'  => array(),
+			),
+			'wseo_local_seo'                 => array(
+				'business_name'        => '',
+				'business_address'     => '',
+				'business_phone'       => '',
+				'business_email'       => '',
+				'sameas'               => array(),
+				'geoshape_coordinates' => array(),
+				'landmarks'            => array(),
+			),
+			'wseo_page_suffix_separator'     => '–',
 		);
 	}
 

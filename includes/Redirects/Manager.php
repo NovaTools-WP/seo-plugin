@@ -9,7 +9,7 @@ class Manager {
 	use Base;
 
 	public function init() {
-		add_action( 'plugins_loaded', array( $this, 'check_redirects' ), 1 );
+		$this->check_redirects();
 	}
 
 	public function check_redirects() {

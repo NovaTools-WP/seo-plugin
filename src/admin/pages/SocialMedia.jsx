@@ -1,10 +1,11 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import * as api from "../api";
 
 export default function SocialMedia() {
   const [ogImage, setOgImage] = useState("");
   const [twitterCard, setTwitterCard] = useState("summary_large_image");
   const [twitterSite, setTwitterSite] = useState("");
+  const [pinterestRichPins, setPinterestRichPins] = useState(true);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState("");
 
@@ -13,8 +14,14 @@ export default function SocialMedia() {
       setOgImage(s.wseo_social_og_default_image || "");
       setTwitterCard(s.wseo_social_twitter_card_type || "summary_large_image");
       setTwitterSite(s.wseo_social_twitter_site || "");
+      setPinterestRichPins(s.wseo_social_pinterest_rich_pins !== "0");
     });
   }, []);
+
+  const togglePinterest = useCallback(
+    () => setPinterestRichPins((prev) => !prev),
+    []
+  );
 
   async function save() {
     setSaving(true);
@@ -24,6 +31,7 @@ export default function SocialMedia() {
         wseo_social_og_default_image: ogImage,
         wseo_social_twitter_card_type: twitterCard,
         wseo_social_twitter_site: twitterSite,
+        wseo_social_pinterest_rich_pins: pinterestRichPins ? "1" : "0",
       });
       setMessage("Settings saved.");
     } catch {
@@ -88,6 +96,33 @@ export default function SocialMedia() {
             className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
             placeholder="@yourhandle"
           />
+        </div>
+
+        <div className="flex items-center justify-between rounded-md border border-gray-200 px-4 py-3">
+          <div>
+            <label className="text-sm font-medium text-gray-700">
+              Enable Pinterest Rich Pins for Products
+            </label>
+            <p className="text-xs text-gray-500">
+              Output product price, availability, and SKU tags for Pinterest
+              Rich Pins on WooCommerce product pages.
+            </p>
+          </div>
+          <button
+            type="button"
+            role="switch"
+            aria-checked={pinterestRichPins}
+            onClick={togglePinterest}
+            className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${
+              pinterestRichPins ? "bg-blue-600" : "bg-gray-200"
+            }`}
+          >
+            <span
+              className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
+                pinterestRichPins ? "translate-x-5" : "translate-x-0"
+              }`}
+            />
+          </button>
         </div>
 
         <button

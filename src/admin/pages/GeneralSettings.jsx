@@ -9,6 +9,74 @@ const ROBOTS_OPTIONS = [
   { value: "noindex,nofollow", label: "noindex, nofollow" },
 ];
 
+function PostTypeTab({ type, settings, set }) {
+  const pfx = `wseo_general_${type.name}_`;
+  return (
+    <div className="space-y-4">
+      <div>
+        <label className="block text-sm font-medium text-gray-700">
+          Title Template
+        </label>
+        <input
+          type="text"
+          value={settings[pfx + "title_template"] || ""}
+          onChange={(e) => set(pfx + "title_template", e.target.value)}
+          className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
+          placeholder={
+            settings.wseo_general_title_template ||
+            "%%title%% %%sep%% %%sitename%%"
+          }
+        />
+        <p className="mt-1 text-xs text-gray-400">
+          Tokens: %%title%%, %%sitename%%, %%sitedesc%%, %%sep%%, %%category%%, %%page%%
+        </p>
+      </div>
+      <div>
+        <label className="block text-sm font-medium text-gray-700">
+          Description Template
+        </label>
+        <textarea
+          value={settings[pfx + "desc_template"] || ""}
+          onChange={(e) => set(pfx + "desc_template", e.target.value)}
+          className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
+          rows={2}
+          placeholder={settings.wseo_general_desc_template || ""}
+        />
+      </div>
+      <div>
+        <label className="block text-sm font-medium text-gray-700">
+          Robots Default
+        </label>
+        <select
+          value={settings[pfx + "robots_default"] || ""}
+          onChange={(e) => set(pfx + "robots_default", e.target.value)}
+          className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
+        >
+          <option value="">Use global default</option>
+          {ROBOTS_OPTIONS.map((o) => (
+            <option key={o.value} value={o.value}>
+              {o.label}
+            </option>
+          ))}
+        </select>
+      </div>
+      <div className="flex items-center gap-2">
+        <input
+          type="checkbox"
+          checked={settings[pfx + "sitemap_visibility"] !== "0"}
+          onChange={(e) =>
+            set(pfx + "sitemap_visibility", e.target.checked ? "1" : "0")
+          }
+          className="h-4 w-4 rounded border-gray-300"
+        />
+        <label className="text-sm text-gray-700">
+          Include in sitemap
+        </label>
+      </div>
+    </div>
+  );
+}
+
 export default function GeneralSettings() {
   const [settings, setSettings] = useState({});
   const [saving, setSaving] = useState(false);
@@ -33,74 +101,6 @@ export default function GeneralSettings() {
       setMessage("Error saving settings.");
     }
     setSaving(false);
-  }
-
-  function PostTypeTab({ type }) {
-    const pfx = `wseo_general_${type.name}_`;
-    return (
-      <div className="space-y-4">
-        <div>
-          <label className="block text-sm font-medium text-gray-700">
-            Title Template
-          </label>
-          <input
-            type="text"
-            value={settings[pfx + "title_template"] || ""}
-            onChange={(e) => set(pfx + "title_template", e.target.value)}
-            className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
-            placeholder={
-              settings.wseo_general_title_template ||
-              "%%title%% %%sep%% %%sitename%%"
-            }
-          />
-          <p className="mt-1 text-xs text-gray-400">
-            Tokens: %%title%%, %%sitename%%, %%sep%%, %%category%%, %%page%%
-          </p>
-        </div>
-        <div>
-          <label className="block text-sm font-medium text-gray-700">
-            Description Template
-          </label>
-          <textarea
-            value={settings[pfx + "desc_template"] || ""}
-            onChange={(e) => set(pfx + "desc_template", e.target.value)}
-            className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
-            rows={2}
-            placeholder={settings.wseo_general_desc_template || ""}
-          />
-        </div>
-        <div>
-          <label className="block text-sm font-medium text-gray-700">
-            Robots Default
-          </label>
-          <select
-            value={settings[pfx + "robots_default"] || ""}
-            onChange={(e) => set(pfx + "robots_default", e.target.value)}
-            className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
-          >
-            <option value="">Use global default</option>
-            {ROBOTS_OPTIONS.map((o) => (
-              <option key={o.value} value={o.value}>
-                {o.label}
-              </option>
-            ))}
-          </select>
-        </div>
-        <div className="flex items-center gap-2">
-          <input
-            type="checkbox"
-            checked={settings[pfx + "sitemap_visibility"] !== "0"}
-            onChange={(e) =>
-              set(pfx + "sitemap_visibility", e.target.checked ? "1" : "0")
-            }
-            className="h-4 w-4 rounded border-gray-300"
-          />
-          <label className="text-sm text-gray-700">
-            Include in sitemap
-          </label>
-        </div>
-      </div>
-    );
   }
 
   return (
@@ -144,7 +144,7 @@ export default function GeneralSettings() {
               placeholder="%%title%% %%sep%% %%sitename%%"
             />
             <p className="mt-1 text-xs text-gray-400">
-              Tokens: %%title%%, %%sitename%%, %%sep%%, %%category%%, %%page%%
+              Tokens: %%title%%, %%sitename%%, %%sitedesc%%, %%sep%%, %%category%%, %%page%%
             </p>
           </div>
           <div>
@@ -192,11 +192,28 @@ export default function GeneralSettings() {
               placeholder="User-agent: *&#10;Disallow: /wp-admin/"
             />
           </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700">
+              Page Suffix Separator
+            </label>
+            <input
+              type="text"
+              value={settings.wseo_page_suffix_separator ?? "–"}
+              onChange={(e) =>
+                set("wseo_page_suffix_separator", e.target.value)
+              }
+              className="mt-1 block w-20 rounded-md border border-gray-300 px-3 py-2 text-sm"
+              placeholder="–"
+            />
+            <p className="mt-1 text-xs text-gray-400">
+              Separator used before "Page N" in meta titles on paginated archives.
+            </p>
+          </div>
         </Tabs.Content>
 
         {postTypes.map((t) => (
           <Tabs.Content key={t.name} value={t.name}>
-            <PostTypeTab type={t} />
+            <PostTypeTab type={t} settings={settings} set={set} />
           </Tabs.Content>
         ))}
       </Tabs.Root>

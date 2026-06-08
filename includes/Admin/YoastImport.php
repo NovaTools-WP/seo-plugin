@@ -22,10 +22,6 @@ class YoastImport {
 		'_yoast_wpseo_twitter-image'       => '_wseo_twitter_image',
 	);
 
-	public function init() {
-		add_action( 'wseo_yoast_import_batch', array( $this, 'process_batch' ) );
-	}
-
 	public function start_import() {
 		global $wpdb;
 
@@ -37,13 +33,6 @@ class YoastImport {
 			return array( 'total' => 0, 'message' => 'No Yoast SEO data found.' );
 		}
 
-		$batch_size = 100;
-		$batches = ceil( $total / $batch_size );
-
-		for ( $i = 0; $i < $batches; $i++ ) {
-			wp_schedule_single_event( time() + ( $i * 5 ), 'wseo_yoast_import_batch', array( $i * $batch_size, $batch_size ) );
-		}
-
 		set_transient( 'wseo_yoast_import_total', $total, HOUR_IN_SECONDS );
 		set_transient( 'wseo_yoast_import_progress', 0, HOUR_IN_SECONDS );
 
@@ -51,11 +40,11 @@ class YoastImport {
 
 		return array(
 			'total'   => (int) $total,
-			'message' => "Importing {$total} posts in {$batches} batches.",
+			'message' => "Ready to import {$total} posts.",
 		);
 	}
 
-	public function process_batch( $offset, $limit ) {
+	public function process_batch( $offset = 0, $limit = 50 ) {
 		global $wpdb;
 
 		$post_ids = $wpdb->get_col(
@@ -70,8 +59,14 @@ class YoastImport {
 			$this->migrate_post_meta( $post_id );
 		}
 
-		$progress = get_transient( 'wseo_yoast_import_progress' );
-		set_transient( 'wseo_yoast_import_progress', $progress + count( $post_ids ), HOUR_IN_SECONDS );
+		$progress = (int) get_transient( 'wseo_yoast_import_progress' );
+		$progress += count( $post_ids );
+		set_transient( 'wseo_yoast_import_progress', $progress, HOUR_IN_SECONDS );
+
+		return array(
+			'processed' => count( $post_ids ),
+			'progress'  => $progress,
+		);
 	}
 
 	public function migrate_post_meta( $post_id ) {

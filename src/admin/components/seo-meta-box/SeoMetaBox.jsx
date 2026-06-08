@@ -1,10 +1,14 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef, useCallback, useMemo } from "react";
+import * as api from "../../api";
+import useSeoCompleteness from "./hooks/useSeoCompleteness";
+import SeoCompletenessGauge from "./SeoCompletenessGauge";
 
 const TITLE_MAX = 60;
 const DESC_MAX = 160;
+const SAVE_DEBOUNCE_MS = 800;
 
 export default function SeoMetaBox() {
-  const container = document.getElementById("novatools-seo-meta-box");
+  const container = document.getElementById("wseo-react-meta-box");
   const postId = container?.dataset?.postId || "";
   const permalink = container?.dataset?.permalink || "";
   const initialMeta = container?.dataset?.meta
@@ -36,9 +40,46 @@ export default function SeoMetaBox() {
   const [twitterImage, setTwitterImage] = useState(
     initialMeta._wseo_twitter_image || "",
   );
+  const [localBusiness, setLocalBusiness] = useState(
+    initialMeta._wseo_local_business === "1" || initialMeta._wseo_local_business === true,
+  );
+  const [saving, setSaving] = useState(false);
 
+  const featuredImage = Boolean(initialMeta._thumbnail_id);
+
+  const seoFormState = useMemo(
+    () => ({
+      seoTitle: title,
+      metaDescription: description,
+      ogImage,
+      featuredImage,
+      ogTitle,
+      ogDescription: ogDesc,
+      canonical,
+      robots,
+    }),
+    [title, description, ogImage, featuredImage, ogTitle, ogDesc, canonical, robots],
+  );
+
+  const { checks, percentage, passed, total } = useSeoCompleteness(seoFormState);
+
+  const saveTimer = useRef(null);
+  const latestFields = useRef({});
+
+  const saveMeta = useCallback(async (fields) => {
+    if (!postId) return;
+    setSaving(true);
+    try {
+      await api.post(`/post-meta/${postId}`, fields);
+    } catch {
+      // silent fail — will retry on next change
+    }
+    setSaving(false);
+  }, [postId]);
+
+  // Debounced save: collect latest field values and save after user stops typing
   useEffect(() => {
-    const fields = {
+    latestFields.current = {
       _wseo_title: title,
       _wseo_description: description,
       _wseo_canonical: canonical,
@@ -50,10 +91,32 @@ export default function SeoMetaBox() {
       _wseo_twitter_title: twitterTitle,
       _wseo_twitter_description: twitterDesc,
       _wseo_twitter_image: twitterImage,
+      _wseo_local_business: localBusiness ? "1" : "",
     };
 
+    if (saveTimer.current) clearTimeout(saveTimer.current);
+    saveTimer.current = setTimeout(() => {
+      saveMeta(latestFields.current);
+    }, SAVE_DEBOUNCE_MS);
+
+    return () => {
+      if (saveTimer.current) clearTimeout(saveTimer.current);
+    };
+  }, [
+    title, description, canonical, robots,
+    ogTitle, ogDesc, ogImage,
+    twitterCard, twitterTitle, twitterDesc, twitterImage,
+    localBusiness, saveMeta,
+  ]);
+
+  // Also sync to hidden inputs for classic editor fallback
+  useEffect(() => {
+    const fields = latestFields.current;
+    const parent = container?.parentElement;
+    if (!parent) return;
+
     Object.entries(fields).forEach(([name, value]) => {
-      const input = document.querySelector(`input[name="${name}"]`);
+      const input = parent.querySelector(`input[name="${name}"]`);
       if (input) {
         input.value = value;
       } else {
@@ -61,26 +124,25 @@ export default function SeoMetaBox() {
         hidden.type = "hidden";
         hidden.name = name;
         hidden.value = value;
-        const form = container?.closest("form");
-        if (form) form.appendChild(hidden);
+        parent.appendChild(hidden);
       }
     });
   }, [
-    title,
-    description,
-    canonical,
-    robots,
-    ogTitle,
-    ogDesc,
-    ogImage,
-    twitterCard,
-    twitterTitle,
-    twitterDesc,
-    twitterImage,
+    title, description, canonical, robots,
+    ogTitle, ogDesc, ogImage,
+    twitterCard, twitterTitle, twitterDesc, twitterImage,
+    localBusiness,
   ]);
 
   return (
     <div className="space-y-4">
+      <SeoCompletenessGauge
+        checks={checks}
+        percentage={percentage}
+        passed={passed}
+        total={total}
+      />
+
       <SnippetPreview
         title={title || "Post Title"}
         description={description || "Meta description will appear here..."}
@@ -245,6 +307,22 @@ export default function SeoMetaBox() {
           </div>
         </div>
       </details>
+
+      <div className="flex items-center gap-2">
+        <input
+          type="checkbox"
+          checked={localBusiness}
+          onChange={(e) => setLocalBusiness(e.target.checked)}
+          className="h-4 w-4 rounded border-gray-300"
+        />
+        <label className="text-sm text-gray-700">
+          Output Local Business Schema on this page
+        </label>
+      </div>
+
+      {saving && (
+        <p className="text-xs text-gray-400">Saving...</p>
+      )}
     </div>
   );
 }
