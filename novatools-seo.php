@@ -11,6 +11,7 @@
  * Domain Path: /languages
  * Requires at least: 5.8
  * Requires PHP: 7.4
+ * Requires Plugins: novatools
  *
  * @package NovaToolsSEO
  */
@@ -48,3 +49,18 @@ function novatools_seo_init() {
 }
 
 add_action( 'plugins_loaded', 'novatools_seo_init' );
+
+/**
+ * Add settings link to the plugin action links.
+ */
+add_filter( 'plugin_action_links_' . plugin_basename( __FILE__ ), 'novatools_seo_add_settings_link' );
+function novatools_seo_add_settings_link( $links ) {
+	$settings_link = sprintf(
+		'<a href="%s">%s</a>',
+		admin_url( 'admin.php?page=novatools#/seo' ),
+		esc_html__( 'Settings', 'novatools-seo' )
+	);
+	array_unshift( $links, $settings_link );
+	return $links;
+}
+
