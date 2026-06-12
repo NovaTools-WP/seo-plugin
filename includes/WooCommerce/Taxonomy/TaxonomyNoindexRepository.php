@@ -22,7 +22,14 @@ class TaxonomyNoindexRepository {
 	}
 
 	public function save_all( array $taxonomies ) {
-		return update_option( self::OPTION_KEY, $taxonomies );
+		$sanitized = array();
+		$allowed_taxonomies = $this->get_woocommerce_taxonomies();
+		foreach ( $taxonomies as $taxonomy => $noindex ) {
+			if ( in_array( $taxonomy, $allowed_taxonomies, true ) ) {
+				$sanitized[ $taxonomy ] = ! empty( $noindex ) ? true : false;
+			}
+		}
+		return update_option( self::OPTION_KEY, $sanitized );
 	}
 
 	public function is_noindexed( $taxonomy_name ) {

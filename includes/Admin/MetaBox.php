@@ -46,6 +46,7 @@ class MetaBox {
 
 	public function render_term_meta_box( $tag, $taxonomy ) {
 		$meta = $this->get_term_seo_data( $tag->term_id );
+		wp_nonce_field( 'novatools_seo_save_term_meta', 'novatools_seo_term_nonce' );
 		?>
 		<tr class="form-field">
 			<th scope="row"><?php esc_html_e( 'SEO Title', 'novatools-seo' ); ?></th>
@@ -93,6 +94,14 @@ class MetaBox {
 	}
 
 	public function save_term_meta( $term_id ) {
+		if ( ! current_user_can( 'edit_term', $term_id ) ) {
+			return;
+		}
+
+		if ( ! isset( $_POST['novatools_seo_term_nonce'] ) || ! wp_verify_nonce( $_POST['novatools_seo_term_nonce'], 'novatools_seo_save_term_meta' ) ) {
+			return;
+		}
+
 		$fields = array( '_wseo_title', '_wseo_description', '_wseo_robots' );
 
 		foreach ( $fields as $field ) {

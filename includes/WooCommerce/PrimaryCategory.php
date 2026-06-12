@@ -33,6 +33,12 @@ class PrimaryCategory {
 
 		// If primary category was explicitly set via POST
 		if ( isset( $_POST['_wseo_primary_category'] ) ) {
+			if ( ! isset( $_POST['novatools_seo_product_nonce'] ) || ! wp_verify_nonce( $_POST['novatools_seo_product_nonce'], 'novatools_seo_save_product_meta' ) ) {
+				if ( ! isset( $_POST['novatools_seo_nonce'] ) || ! wp_verify_nonce( $_POST['novatools_seo_nonce'], 'novatools_seo_save_meta' ) ) {
+					return;
+				}
+			}
+
 			$term_id = absint( $_POST['_wseo_primary_category'] );
 			if ( $term_id > 0 ) {
 				update_post_meta( $post_id, '_wseo_primary_category', $term_id );

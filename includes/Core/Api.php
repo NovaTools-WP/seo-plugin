@@ -280,10 +280,14 @@ class Api {
 	public function save_settings( $request ) {
 		$params = $request->get_json_params();
 		$settings = Settings::get_instance();
+		$allowed_keys = $settings->get_all_setting_keys();
 
 		foreach ( $params as $key => $value ) {
-			if ( 0 === strpos( $key, 'wseo_' ) ) {
-				update_option( $key, $value );
+			if ( array_key_exists( $key, $allowed_keys ) ) {
+				$sanitized_value = $settings->sanitize_setting( $key, $value );
+				if ( null !== $sanitized_value ) {
+					update_option( $key, $sanitized_value );
+				}
 			}
 		}
 

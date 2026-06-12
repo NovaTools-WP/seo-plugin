@@ -94,10 +94,107 @@ class Settings {
 	}
 
 	public function import_all( $settings ) {
+		$allowed_keys = $this->get_all_setting_keys();
 		foreach ( $settings as $key => $value ) {
-			if ( 0 === strpos( $key, 'wseo_' ) ) {
-				update_option( $key, $value );
+			if ( array_key_exists( $key, $allowed_keys ) ) {
+				$sanitized_value = $this->sanitize_setting( $key, $value );
+				if ( null !== $sanitized_value ) {
+					update_option( $key, $sanitized_value );
+				}
 			}
+		}
+	}
+
+	public function sanitize_setting( $key, $value ) {
+		switch ( $key ) {
+			case 'wseo_general_title_template':
+			case 'wseo_general_desc_template':
+			case 'wseo_general_robots_default':
+			case 'wseo_social_twitter_card_type':
+			case 'wseo_social_twitter_site':
+			case 'wseo_social_pinterest_rich_pins':
+			case 'wseo_sitemap_enabled':
+			case 'wseo_license_key':
+			case 'wseo_indexnow_enabled':
+			case 'wseo_indexnow_api_key':
+			case 'wseo_page_suffix_separator':
+				return sanitize_text_field( $value );
+
+			case 'wseo_social_og_default_image':
+				return esc_url_raw( $value );
+
+			case 'wseo_outofstock_threshold':
+				return absint( $value );
+
+			case 'wseo_robots_txt_content':
+				return sanitize_textarea_field( $value );
+
+			case 'wseo_ai_bot_rules':
+				if ( ! is_array( $value ) ) {
+					return array();
+				}
+				$sanitized = array(
+					'preset_bots' => array(),
+					'custom_bots' => array(),
+					'path_rules'  => array(),
+				);
+				foreach ( array( 'preset_bots', 'custom_bots' ) as $bot_type ) {
+					if ( ! empty( $value[ $bot_type ] ) && is_array( $value[ $bot_type ] ) ) {
+						foreach ( $value[ $bot_type ] as $bot ) {
+							$sanitized_bot = array(
+								'user_agent' => sanitize_text_field( $bot['user_agent'] ?? '' ),
+								'blocked'    => ! empty( $bot['blocked'] ) ? '1' : '',
+							);
+							if ( isset( $bot['path_rules'] ) && is_array( $bot['path_rules'] ) ) {
+								$sanitized_bot['path_rules'] = array();
+								foreach ( $bot['path_rules'] as $rule ) {
+									$sanitized_bot['path_rules'][] = array(
+										'path'  => sanitize_text_field( $rule['path'] ?? '' ),
+										'allow' => ! empty( $rule['allow'] ) ? '1' : '',
+									);
+								}
+							}
+							$sanitized[ $bot_type ][] = $sanitized_bot;
+						}
+					}
+				}
+				return $sanitized;
+
+			case 'wseo_local_seo':
+				if ( ! is_array( $value ) ) {
+					return array();
+				}
+				$sanitized = array(
+					'business_name'        => sanitize_text_field( $value['business_name'] ?? '' ),
+					'business_address'     => sanitize_text_field( $value['business_address'] ?? '' ),
+					'business_phone'       => sanitize_text_field( $value['business_phone'] ?? '' ),
+					'business_email'       => sanitize_email( $value['business_email'] ?? '' ),
+					'sameas'               => array(),
+					'geoshape_coordinates' => array(),
+					'landmarks'            => array(),
+				);
+				if ( isset( $value['sameas'] ) && is_array( $value['sameas'] ) ) {
+					foreach ( $value['sameas'] as $url ) {
+						$url = esc_url_raw( $url );
+						if ( $url ) {
+							$sanitized['sameas'][] = $url;
+						}
+					}
+				}
+				if ( isset( $value['geoshape_coordinates'] ) && is_array( $value['geoshape_coordinates'] ) ) {
+					foreach ( $value['geoshape_coordinates'] as $coord ) {
+						$sanitized['geoshape_coordinates'][] = sanitize_text_field( $coord );
+					}
+				}
+				if ( isset( $value['landmarks'] ) && is_array( $value['landmarks'] ) ) {
+					foreach ( $value['landmarks'] as $landmark ) {
+						$sanitized['landmarks'][] = sanitize_text_field( $landmark );
+					}
+				}
+				return $sanitized;
+
+			default:
+				return null;
 		}
 	}
 }

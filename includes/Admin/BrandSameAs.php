@@ -35,6 +35,7 @@ class BrandSameAs {
 	public function render_fields( $tag ) {
 		$urls = get_term_meta( $tag->term_id, '_wseo_sameas', true );
 		$urls = is_array( $urls ) ? $urls : array();
+		wp_nonce_field( 'novatools_seo_save_brand_sameas', 'novatools_seo_brand_sameas_nonce' );
 		?>
 		<tr class="form-field">
 			<th scope="row"><label for="wseo-sameas"><?php esc_html_e( 'Entity URLs (sameAs)', 'novatools-seo' ); ?></label></th>
@@ -74,6 +75,10 @@ class BrandSameAs {
 
 	public function save( $term_id ) {
 		if ( ! current_user_can( 'edit_term', $term_id ) ) {
+			return;
+		}
+
+		if ( ! isset( $_POST['novatools_seo_brand_sameas_nonce'] ) || ! wp_verify_nonce( $_POST['novatools_seo_brand_sameas_nonce'], 'novatools_seo_save_brand_sameas' ) ) {
 			return;
 		}
 

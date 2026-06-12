@@ -34,6 +34,7 @@ class ProductMetaBox {
 		$meta = $this->get_product_seo_data( $post->ID );
 		?>
 		<div id="wseo_schema_product_data" class="panel woocommerce_options_panel">
+			<?php wp_nonce_field( 'novatools_seo_save_product_meta', 'novatools_seo_product_nonce' ); ?>
 			<div id="wseo-product-schema-tab"
 				data-post-id="<?php echo esc_attr( $post->ID ); ?>"
 				data-meta="<?php echo esc_attr( wp_json_encode( $meta ) ); ?>">
@@ -43,6 +44,10 @@ class ProductMetaBox {
 	}
 
 	public function save_meta( $post_id ) {
+		if ( ! isset( $_POST['novatools_seo_product_nonce'] ) || ! wp_verify_nonce( $_POST['novatools_seo_product_nonce'], 'novatools_seo_save_product_meta' ) ) {
+			return;
+		}
+
 		if ( defined( 'DOING_AUTOSAVE' ) && DOING_AUTOSAVE ) {
 			return;
 		}
