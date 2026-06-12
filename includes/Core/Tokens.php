@@ -10,12 +10,23 @@ class Tokens {
 		}
 
 		$tokens = self::get_token_values( $post );
+		$sep    = $tokens['%%sep%%'] ?? '-';
+		$ph     = "\x00";
 
-		return str_replace(
-			array_keys( $tokens ),
-			array_values( $tokens ),
-			$template
-		);
+		$replacements = array();
+		foreach ( $tokens as $token => $value ) {
+			$replacements[ $token ] = ( $value === '' && $token !== '%%sep%%' ) ? $ph : $value;
+		}
+
+		$result = strtr( $template, $replacements );
+
+		$escaped = preg_quote( $sep, '~' );
+		$ph_e    = preg_quote( $ph, '~' );
+		$result  = preg_replace( '~' . $ph_e . '\s*' . $escaped . '|' . $escaped . '\s*' . $ph_e . '~', '', $result );
+		$result  = str_replace( $ph, '', $result );
+		$result  = preg_replace( '~\s+~', ' ', $result );
+
+		return trim( $result );
 	}
 
 	public static function get_token_values( $post = null ) {

@@ -86,6 +86,11 @@ class HeadOutput {
 			} else {
 				$template = $settings->get( 'general_title_template', '%%title%% %%sep%% %%sitename%%' );
 			}
+
+			if ( ( is_archive() || is_search() ) && strpos( $template, '%%title%%' ) === false ) {
+				$template = '%%title%% %%sep%% %%sitename%%';
+			}
+
 			$title = Tokens::replace( $template );
 		}
 
