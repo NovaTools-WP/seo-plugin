@@ -59,6 +59,10 @@ class AltTextController {
 		$skipped       = 0;
 		$images        = array();
 
+		// Preload caches for all attachments to avoid N+1 queries.
+		update_meta_cache( 'post', $gallery_ids );
+		_prime_post_caches( $gallery_ids, false, false );
+
 		$index = 1;
 		foreach ( $gallery_ids as $attachment_id ) {
 			$current_alt = get_post_meta( $attachment_id, '_wp_attachment_image_alt', true );
