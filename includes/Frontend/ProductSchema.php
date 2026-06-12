@@ -371,6 +371,8 @@ class ProductSchema {
 			return array( 'average' => 0, 'count' => 0 );
 		}
 
+		update_meta_cache( 'comment', wp_list_pluck( $reviews, 'comment_ID' ) );
+
 		$total = 0;
 		foreach ( $reviews as $review ) {
 			$rating = (int) get_comment_meta( $review->comment_ID, 'rating', true );
@@ -398,6 +400,8 @@ class ProductSchema {
 
 		$reviews = get_comments( $args );
 		$objects = array();
+
+		update_meta_cache( 'comment', wp_list_pluck( $reviews, 'comment_ID' ) );
 
 		foreach ( $reviews as $review ) {
 			$rating = (int) get_comment_meta( $review->comment_ID, 'rating', true );
