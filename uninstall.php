@@ -4,8 +4,11 @@ defined( 'WP_UNINSTALL_PLUGIN' ) || exit;
 
 global $wpdb;
 
-$wpdb->query( "DROP TABLE IF EXISTS {$wpdb->prefix}wseo_redirects" );
-$wpdb->query( "DROP TABLE IF EXISTS {$wpdb->prefix}wseo_logs" );
+// Sanitize prefix to prevent SQL injection via table name.
+$prefix = preg_replace( '/[^a-z0-9_]/i', '', $wpdb->prefix );
+
+$wpdb->query( "DROP TABLE IF EXISTS {$prefix}wseo_redirects" );
+$wpdb->query( "DROP TABLE IF EXISTS {$prefix}wseo_logs" );
 
 $wpdb->query(
 	$wpdb->prepare(

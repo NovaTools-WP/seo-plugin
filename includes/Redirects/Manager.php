@@ -26,12 +26,12 @@ class Manager {
 		global $wpdb;
 		$table = $wpdb->prefix . 'wseo_redirects';
 
-		$table_exists = $wpdb->get_var( "SHOW TABLES LIKE '{$table}'" );
+		$table_exists = $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $table ) );
 		if ( ! $table_exists ) {
 			return;
 		}
 
-		$redirects = $wpdb->get_results( "SELECT * FROM {$table}" );
+		$redirects = $wpdb->get_results( "SELECT * FROM `" . esc_sql( $table ) . "`" );
 
 		foreach ( $redirects as $redirect ) {
 			$matched = false;
@@ -61,7 +61,7 @@ class Manager {
 	}
 
 	private function get_request_path() {
-		$parsed = wp_parse_url( $_SERVER['REQUEST_URI'] ?? '' );
+		$parsed = wp_parse_url( esc_url_raw( wp_unslash( $_SERVER['REQUEST_URI'] ?? '' ) ) );
 		return $parsed['path'] ?? '';
 	}
 }

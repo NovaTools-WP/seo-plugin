@@ -26,7 +26,8 @@ class Logs {
 
 	public static function down() {
 		global $wpdb;
-		$table = $wpdb->prefix . 'wseo_logs';
-		$wpdb->query( "DROP TABLE IF EXISTS {$table}" );
+		// Sanitize prefix to prevent SQL injection via table name.
+		$prefix = preg_replace( '/[^a-z0-9_]/i', '', $wpdb->prefix );
+		$wpdb->query( "DROP TABLE IF EXISTS {$prefix}wseo_logs" );
 	}
 }

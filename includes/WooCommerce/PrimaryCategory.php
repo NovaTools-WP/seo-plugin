@@ -109,7 +109,7 @@ class PrimaryCategory {
 
 		$post_id   = get_the_ID();
 		$permalink = get_permalink( $post_id );
-		$requested = $_SERVER['REQUEST_URI'] ?? '';
+		$requested = esc_url_raw( wp_unslash( $_SERVER['REQUEST_URI'] ?? '' ) );
 
 		// Parse paths for comparison
 		$perm_path  = wp_parse_url( $permalink, PHP_URL_PATH );

@@ -419,7 +419,10 @@ class Api {
 		global $wpdb;
 		$table = $wpdb->prefix . 'wseo_redirects';
 
-		$redirects = $wpdb->get_results( "SELECT * FROM {$table} ORDER BY id DESC", ARRAY_A );
+		$redirects = $wpdb->get_results(
+			$wpdb->prepare( "SELECT * FROM `{$table}` ORDER BY id DESC" ),
+			ARRAY_A
+		);
 		return rest_ensure_response( $redirects ?: array() );
 	}
 
@@ -467,19 +470,31 @@ class Api {
 		global $wpdb;
 		$table = $wpdb->prefix . 'wseo_logs';
 
-		$where = '';
 		if ( ! empty( $request['type'] ) ) {
-			$where = $wpdb->prepare( ' WHERE type = %s', sanitize_text_field( $request['type'] ) );
+			$logs = $wpdb->get_results(
+				$wpdb->prepare(
+					"SELECT * FROM `{$table}` WHERE type = %s ORDER BY created_at DESC LIMIT 200",
+					sanitize_text_field( $request['type'] )
+				),
+				ARRAY_A
+			);
+		} else {
+			$logs = $wpdb->get_results(
+				$wpdb->prepare( "SELECT * FROM `{$table}` ORDER BY created_at DESC LIMIT 200" ),
+				ARRAY_A
+			);
 		}
 
-		$logs = $wpdb->get_results( "SELECT * FROM {$table}{$where} ORDER BY created_at DESC LIMIT 200", ARRAY_A );
 		return rest_ensure_response( $logs ?: array() );
 	}
 
 	public function export_logs( $request ) {
 		global $wpdb;
 		$table = $wpdb->prefix . 'wseo_logs';
-		$logs = $wpdb->get_results( "SELECT * FROM {$table} ORDER BY created_at DESC", ARRAY_A );
+		$logs = $wpdb->get_results(
+			$wpdb->prepare( "SELECT * FROM `{$table}` ORDER BY created_at DESC" ),
+			ARRAY_A
+		);
 		return rest_ensure_response( $logs ?: array() );
 	}
 
