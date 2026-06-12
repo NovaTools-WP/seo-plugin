@@ -211,10 +211,19 @@ class ProductSchema {
 
 	private function get_purchasable_variations( $product ) {
 		$variation_ids = $product->get_children();
+		if ( empty( $variation_ids ) ) {
+			return array();
+		}
+
 		$variations = array();
 
-		foreach ( $variation_ids as $id ) {
-			$variation = wc_get_product( $id );
+		$variation_objects = wc_get_products( array(
+			'include' => $variation_ids,
+			'limit'   => -1,
+			'return'  => 'objects',
+		) );
+
+		foreach ( $variation_objects as $variation ) {
 			if ( $variation && $variation->is_published() && $variation->is_purchasable() && '' !== $variation->get_price() ) {
 				$variations[] = $variation;
 			}
