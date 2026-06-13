@@ -4,6 +4,8 @@ namespace NovaToolsSEO\Admin;
 
 use NovaToolsSEO\Traits\Base;
 
+defined( 'ABSPATH' ) || exit;
+
 class Import {
 
 	use Base;

@@ -5,6 +5,8 @@ namespace NovaToolsSEO\WooCommerce;
 use NovaToolsSEO\Core\Logger;
 use NovaToolsSEO\Traits\Base;
 
+defined( 'ABSPATH' ) || exit;
+
 class PrimaryCategory {
 
 	use Base;

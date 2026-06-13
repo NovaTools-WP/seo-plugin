@@ -4,6 +4,8 @@ namespace NovaToolsSEO\Sitemaps;
 
 use NovaToolsSEO\Traits\Base;
 
+defined( 'ABSPATH' ) || exit;
+
 class StockTracker {
 
 	use Base;

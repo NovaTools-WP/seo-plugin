@@ -4,6 +4,8 @@ namespace NovaToolsSEO\Admin;
 
 use NovaToolsSEO\Traits\Base;
 
+defined( 'ABSPATH' ) || exit;
+
 /**
  * Adds an "SEO Score" column to the Pages and Posts list tables.
  *

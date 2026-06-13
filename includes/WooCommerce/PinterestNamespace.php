@@ -5,6 +5,8 @@ namespace NovaToolsSEO\WooCommerce;
 use NovaToolsSEO\Admin\Settings;
 use NovaToolsSEO\Traits\Base;
 
+defined( 'ABSPATH' ) || exit;
+
 class PinterestNamespace {
 
 	use Base;

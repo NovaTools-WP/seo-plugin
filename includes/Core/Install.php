@@ -6,6 +6,8 @@ use NovaToolsSEO\Database\Migrations\Redirects;
 use NovaToolsSEO\Database\Migrations\Logs;
 use NovaToolsSEO\Traits\Base;
 
+defined( 'ABSPATH' ) || exit;
+
 class Install {
 
 	use Base;

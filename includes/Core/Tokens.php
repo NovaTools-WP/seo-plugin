@@ -2,6 +2,8 @@
 
 namespace NovaToolsSEO\Core;
 
+defined( 'ABSPATH' ) || exit;
+
 class Tokens {
 
 	public static function replace( $template, $post = null ) {

@@ -9,6 +9,8 @@ use NovaToolsSEO\WooCommerce\ProductOG;
 use NovaToolsSEO\WooCommerce\Filters\FilterDetector;
 use NovaToolsSEO\WooCommerce\Taxonomy\TaxonomyNoindexEnforcer;
 
+defined( 'ABSPATH' ) || exit;
+
 class HeadOutput {
 
 	use Base;

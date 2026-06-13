@@ -4,6 +4,8 @@ namespace NovaToolsSEO\WooCommerce;
 
 use NovaToolsSEO\Traits\Base;
 
+defined( 'ABSPATH' ) || exit;
+
 class AltTextController {
 
 	use Base;

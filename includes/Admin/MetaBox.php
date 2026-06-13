@@ -7,6 +7,8 @@ use NovaToolsSEO\Core\DependencyCheck;
 use NovaToolsSEO\Libs\Assets;
 use NovaToolsSEO\Assets\Admin as AssetsAdmin;
 
+defined( 'ABSPATH' ) || exit;
+
 class MetaBox {
 
 	use Base;

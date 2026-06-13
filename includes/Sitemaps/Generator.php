@@ -5,6 +5,8 @@ namespace NovaToolsSEO\Sitemaps;
 use NovaToolsSEO\Traits\Base;
 use NovaToolsSEO\WooCommerce\Taxonomy\TaxonomyNoindexRepository;
 
+defined( 'ABSPATH' ) || exit;
+
 class Generator {
 
 	use Base;

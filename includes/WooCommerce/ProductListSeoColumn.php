@@ -4,6 +4,8 @@ namespace NovaToolsSEO\WooCommerce;
 
 use NovaToolsSEO\Traits\Base;
 
+defined( 'ABSPATH' ) || exit;
+
 /**
  * Adds an "SEO Score" column to the WooCommerce product list table.
  *

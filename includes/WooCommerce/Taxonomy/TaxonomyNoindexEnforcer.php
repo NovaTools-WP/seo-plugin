@@ -4,6 +4,8 @@ namespace NovaToolsSEO\WooCommerce\Taxonomy;
 
 use NovaToolsSEO\Traits\Base;
 
+defined( 'ABSPATH' ) || exit;
+
 class TaxonomyNoindexEnforcer {
 
 	use Base;

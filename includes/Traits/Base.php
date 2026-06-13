@@ -2,6 +2,8 @@
 
 namespace NovaToolsSEO\Traits;
 
+defined( 'ABSPATH' ) || exit;
+
 trait Base {
 
 	private static $instance;

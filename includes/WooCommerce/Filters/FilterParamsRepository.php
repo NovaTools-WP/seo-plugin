@@ -4,6 +4,8 @@ namespace NovaToolsSEO\WooCommerce\Filters;
 
 use NovaToolsSEO\Traits\Base;
 
+defined( 'ABSPATH' ) || exit;
+
 class FilterParamsRepository {
 
 	use Base;

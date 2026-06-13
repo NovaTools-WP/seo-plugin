@@ -4,6 +4,8 @@ namespace NovaToolsSEO\Redirects;
 
 use NovaToolsSEO\Traits\Base;
 
+defined( 'ABSPATH' ) || exit;
+
 class Manager {
 
 	use Base;

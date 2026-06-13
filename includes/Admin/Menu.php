@@ -5,6 +5,8 @@ namespace NovaToolsSEO\Admin;
 use NovaToolsSEO\Core\DependencyCheck;
 use NovaToolsSEO\Traits\Base;
 
+defined( 'ABSPATH' ) || exit;
+
 class Menu {
 
 	use Base;

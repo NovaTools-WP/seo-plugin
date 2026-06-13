@@ -4,6 +4,8 @@ namespace NovaToolsSEO\Frontend;
 
 use NovaToolsSEO\Traits\Base;
 
+defined( 'ABSPATH' ) || exit;
+
 class Schema {
 
 	use Base;

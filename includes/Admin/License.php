@@ -5,6 +5,8 @@ namespace NovaToolsSEO\Admin;
 use NovaToolsSEO\Core\Logger;
 use NovaToolsSEO\Traits\Base;
 
+defined( 'ABSPATH' ) || exit;
+
 class License {
 
 	use Base;

@@ -6,6 +6,8 @@ use NovaToolsSEO\Admin\Settings;
 use NovaToolsSEO\Traits\Base;
 use NovaToolsSEO\WooCommerce\Filters\FilterParamsRepository;
 
+defined( 'ABSPATH' ) || exit;
+
 class RobotsTxt {
 
 	use Base;

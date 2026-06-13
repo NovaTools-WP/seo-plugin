@@ -6,6 +6,8 @@ use NovaToolsSEO\Core\DependencyCheck;
 use NovaToolsSEO\Traits\Base;
 use NovaToolsSEO\Libs\Assets;
 
+defined( 'ABSPATH' ) || exit;
+
 class Admin {
 
 	use Base;

@@ -10,6 +10,8 @@ use NovaToolsSEO\Traits\Base;
 use NovaToolsSEO\WooCommerce\Filters\FilterParamsRepository;
 use NovaToolsSEO\WooCommerce\Taxonomy\TaxonomyNoindexRepository;
 
+defined( 'ABSPATH' ) || exit;
+
 class Api {
 
 	use Base;
@@ -548,8 +550,13 @@ class Api {
 			$status = $invalid ? 'invalid' : 'valid';
 		}
 
+		$masked = '';
+		if ( ! empty( $key ) ) {
+			$masked = 'XXXX-XXXX-' . substr( $key, -4 );
+		}
+
 		return rest_ensure_response( array(
-			'key'    => $key,
+			'key'    => $masked,
 			'status' => $status,
 		) );
 	}

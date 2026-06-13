@@ -5,6 +5,8 @@ namespace NovaToolsSEO\Frontend;
 use NovaToolsSEO\Admin\Settings;
 use NovaToolsSEO\Traits\Base;
 
+defined( 'ABSPATH' ) || exit;
+
 class IndexNow {
 
 	use Base;

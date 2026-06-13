@@ -2,6 +2,8 @@
 
 namespace NovaToolsSEO\Core;
 
+defined( 'ABSPATH' ) || exit;
+
 class Logger {
 
 	public static function log( $type, $message, $context = null ) {
