@@ -13,6 +13,9 @@ class HeadOutput {
 
 	use Base;
 
+	private $post_seo_cache = null;
+	private $term_seo_cache = null;
+
 	public function init() {
 		add_action( 'wp_head', array( $this, 'output' ), 1 );
 		add_filter( 'pre_get_document_title', array( $this, 'filter_document_title' ), 10 );
@@ -29,8 +32,13 @@ class HeadOutput {
 	}
 
 	private function get_post_seo_data() {
+		if ( null !== $this->post_seo_cache ) {
+			return $this->post_seo_cache;
+		}
+
 		if ( ! is_singular() ) {
-			return array();
+			$this->post_seo_cache = array();
+			return $this->post_seo_cache;
 		}
 
 		$post_id = get_queried_object_id();
@@ -41,12 +49,18 @@ class HeadOutput {
 			$data[ $key ] = get_post_meta( $post_id, $key, true );
 		}
 
-		return $data;
+		$this->post_seo_cache = $data;
+		return $this->post_seo_cache;
 	}
 
 	private function get_term_seo_data() {
+		if ( null !== $this->term_seo_cache ) {
+			return $this->term_seo_cache;
+		}
+
 		if ( ! ( is_category() || is_tag() || is_tax() ) ) {
-			return array();
+			$this->term_seo_cache = array();
+			return $this->term_seo_cache;
 		}
 
 		$term_id = get_queried_object_id();
@@ -57,7 +71,8 @@ class HeadOutput {
 			$data[ $key ] = get_term_meta( $term_id, $key, true );
 		}
 
-		return $data;
+		$this->term_seo_cache = $data;
+		return $this->term_seo_cache;
 	}
 
 	public function filter_document_title( $title ) {
