@@ -5,6 +5,7 @@ namespace NovaToolsSEO\Core;
 use NovaToolsSEO\Admin\License;
 use NovaToolsSEO\Admin\Settings;
 use NovaToolsSEO\Admin\YoastImport;
+use NovaToolsSEO\Core\MetaKeys;
 use NovaToolsSEO\Sitemaps\Generator;
 use NovaToolsSEO\Traits\Base;
 use NovaToolsSEO\WooCommerce\Filters\FilterParamsRepository;
@@ -298,10 +299,13 @@ class Api {
 
 	public function get_post_meta( $request ) {
 		$post_id = (int) $request['id'];
-		$meta_keys = array( '_wseo_title', '_wseo_description', '_wseo_canonical', '_wseo_robots', '_wseo_og_title', '_wseo_og_description', '_wseo_og_image', '_wseo_twitter_card', '_wseo_twitter_title', '_wseo_twitter_description', '_wseo_twitter_image', '_wseo_local_business' );
+
+		if ( ! current_user_can( 'edit_post', $post_id ) ) {
+			return new \WP_Error( 'forbidden', 'You cannot edit this post.', array( 'status' => 403 ) );
+		}
 
 		$data = array();
-		foreach ( $meta_keys as $key ) {
+		foreach ( MetaKeys::POST_ALL as $key ) {
 			$data[ $key ] = get_post_meta( $post_id, $key, true );
 		}
 
@@ -310,11 +314,14 @@ class Api {
 
 	public function save_post_meta( $request ) {
 		$post_id = (int) $request['id'];
+
+		if ( ! current_user_can( 'edit_post', $post_id ) ) {
+			return new \WP_Error( 'forbidden', 'You cannot edit this post.', array( 'status' => 403 ) );
+		}
+
 		$params = $request->get_json_params();
 
-		$allowed_keys = array( '_wseo_title', '_wseo_description', '_wseo_canonical', '_wseo_robots', '_wseo_og_title', '_wseo_og_description', '_wseo_og_image', '_wseo_twitter_card', '_wseo_twitter_title', '_wseo_twitter_description', '_wseo_twitter_image', '_wseo_local_business' );
-
-		foreach ( $allowed_keys as $key ) {
+		foreach ( MetaKeys::POST_ALL as $key ) {
 			if ( isset( $params[ $key ] ) ) {
 				update_post_meta( $post_id, $key, sanitize_text_field( $params[ $key ] ) );
 			}
@@ -325,10 +332,13 @@ class Api {
 
 	public function get_product_meta( $request ) {
 		$post_id = (int) $request['id'];
-		$meta_keys = array( '_wseo_gtin', '_wseo_mpn', '_wseo_isbn', '_wseo_brand', '_wseo_item_condition', '_wseo_faq', '_wseo_local_inventory' );
+
+		if ( ! current_user_can( 'edit_post', $post_id ) ) {
+			return new \WP_Error( 'forbidden', 'You cannot edit this post.', array( 'status' => 403 ) );
+		}
 
 		$data = array();
-		foreach ( $meta_keys as $key ) {
+		foreach ( MetaKeys::PRODUCT as $key ) {
 			$data[ $key ] = get_post_meta( $post_id, $key, true );
 		}
 
@@ -337,11 +347,14 @@ class Api {
 
 	public function save_product_meta( $request ) {
 		$post_id = (int) $request['id'];
+
+		if ( ! current_user_can( 'edit_post', $post_id ) ) {
+			return new \WP_Error( 'forbidden', 'You cannot edit this post.', array( 'status' => 403 ) );
+		}
+
 		$params = $request->get_json_params();
 
-		$text_keys = array( '_wseo_gtin', '_wseo_mpn', '_wseo_isbn', '_wseo_brand', '_wseo_item_condition' );
-
-		foreach ( $text_keys as $key ) {
+		foreach ( MetaKeys::PRODUCT_TEXT as $key ) {
 			if ( isset( $params[ $key ] ) ) {
 				update_post_meta( $post_id, $key, sanitize_text_field( $params[ $key ] ) );
 			}
@@ -440,6 +453,13 @@ class Api {
 			'is_regex'        => absint( $params['is_regex'] ?? 0 ),
 		);
 
+		if ( $data['is_regex'] && ! empty( $data['source_url'] ) ) {
+			$valid = $this->validate_redirect_regex( $data['source_url'] );
+			if ( is_wp_error( $valid ) ) {
+				return $valid;
+			}
+		}
+
 		if ( ! empty( $params['id'] ) ) {
 			$wpdb->update( $table, $data, array( 'id' => absint( $params['id'] ) ) );
 		} else {
@@ -457,6 +477,32 @@ class Api {
 		$wpdb->delete( $table, array( 'id' => absint( $request['id'] ) ) );
 		wp_cache_delete( 'wseo_redirects', 'novatools-seo' );
 		return rest_ensure_response( array( 'success' => true ) );
+	}
+
+	private function validate_redirect_regex( $pattern ) {
+		$result = @preg_match( $pattern, '' );
+		if ( false === $result ) {
+			return new \WP_Error(
+				'invalid_regex',
+				__( 'Invalid regex pattern.', 'novatools-seo' ),
+				array( 'status' => 400 )
+			);
+		}
+
+		$sample = '/sample/path/to/test?query=value&foo=bar';
+		$start  = microtime( true );
+		@preg_match( $pattern, $sample );
+		$elapsed = microtime( true ) - $start;
+
+		if ( $elapsed > 0.1 ) {
+			return new \WP_Error(
+				'regex_too_complex',
+				__( 'Regex pattern is too complex and may cause performance issues.', 'novatools-seo' ),
+				array( 'status' => 400 )
+			);
+		}
+
+		return true;
 	}
 
 	public function export_settings() {
