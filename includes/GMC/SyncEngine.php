@@ -254,25 +254,23 @@ class SyncEngine {
 	}
 
 	private function count_products() {
-		$simple_ids   = get_posts( array(
-			'post_type'      => 'product',
-			'post_status'    => 'publish',
-			'posts_per_page' => -1,
-			'fields'         => 'ids',
-			'tax_query'      => array(),
-		) );
+		global $wpdb;
 
-		$variation_count = 0;
-		foreach ( $simple_ids as $pid ) {
-			$product = wc_get_product( $pid );
-			if ( $product && $product->is_type( 'variable' ) ) {
-				$variation_count += count( $product->get_children() );
-			} else {
-				$variation_count++;
-			}
-		}
+		$non_variable = (int) $wpdb->get_var(
+			"SELECT COUNT(*) FROM {$wpdb->posts}
+			 WHERE post_type = 'product' AND post_status = 'publish'
+			 AND ID NOT IN (
+				 SELECT DISTINCT post_parent FROM {$wpdb->posts}
+				 WHERE post_type = 'product_variation' AND post_status = 'publish'
+			 )"
+		);
 
-		return $variation_count;
+		$variations = (int) $wpdb->get_var(
+			"SELECT COUNT(*) FROM {$wpdb->posts}
+			 WHERE post_type = 'product_variation' AND post_status = 'publish'"
+		);
+
+		return $non_variable + $variations;
 	}
 
 	private function get_products_page( $page ) {

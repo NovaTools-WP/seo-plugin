@@ -202,15 +202,10 @@ class Generator {
 
 		$product = wc_get_product( $product_id );
 		if ( $product && $product->is_type( 'variable' ) ) {
-			$variations = $product->get_children();
-			foreach ( $variations as $variation_id ) {
-				$variation = wc_get_product( $variation_id );
-				if ( $variation && 'publish' === $variation->get_status() ) {
-					$var_image = (int) get_post_meta( $variation_id, '_thumbnail_id', true );
-					if ( $var_image > 0 ) {
-						$image_ids[] = $var_image;
-					}
-				}
+			$variation_ids = array_map( 'absint', $product->get_children() );
+
+			if ( ! empty( $variation_ids ) ) {
+				$image_ids = array_merge( $image_ids, $this->get_variation_thumbnail_ids( $variation_ids ) );
 			}
 		}
 
@@ -222,6 +217,22 @@ class Generator {
 		}
 
 		return $xml;
+	}
+
+	private function get_variation_thumbnail_ids( $variation_ids ) {
+		global $wpdb;
+
+		$ids   = array_map( 'absint', $variation_ids );
+		$in    = implode( ',', $ids );
+		$thumbs = $wpdb->get_col( // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+			"SELECT pm.meta_value FROM {$wpdb->posts} p
+			INNER JOIN {$wpdb->postmeta} pm ON p.ID = pm.post_id AND pm.meta_key = '_thumbnail_id'
+			WHERE p.ID IN ({$in})
+			AND p.post_status = 'publish'
+			AND pm.meta_value > 0"
+		);
+
+		return array_map( 'absint', array_filter( $thumbs ) );
 	}
 
 	private function get_image_xml( $attachment_id ) {
@@ -317,41 +328,29 @@ class Generator {
 	}
 
 	private function get_outofstock_ids() {
+		global $wpdb;
+
 		if ( ! function_exists( 'wc_get_page_id' ) ) {
 			return array();
 		}
 
 		$threshold = (int) get_option( 'wseo_outofstock_threshold', 30 );
 
-		$args = array(
-			'post_type'      => 'product',
-			'posts_per_page' => -1,
-			'post_status'    => 'publish',
-			'fields'         => 'ids',
-			'meta_query'     => array(
-				array(
-					'key'   => '_stock_status',
-					'value' => 'outofstock',
-				),
-			),
-		);
+		$sql = "SELECT DISTINCT p.ID FROM {$wpdb->posts} p
+			INNER JOIN {$wpdb->postmeta} ms ON p.ID = ms.post_id
+			AND ms.meta_key = '_stock_status' AND ms.meta_value = 'outofstock'
+			INNER JOIN {$wpdb->postmeta} mt ON p.ID = mt.post_id
+			AND mt.meta_key = '_wseo_outofstock_since'
+			WHERE p.post_type = 'product' AND p.post_status = 'publish'";
 
 		if ( $threshold > 0 ) {
 			$cutoff = time() - ( $threshold * DAY_IN_SECONDS );
-			$args['meta_query'][] = array(
-				'key'     => '_wseo_outofstock_since',
-				'value'   => $cutoff,
-				'compare' => '<',
-				'type'    => 'NUMERIC',
-			);
-		} else {
-			$args['meta_query'][] = array(
-				'key'     => '_wseo_outofstock_since',
-				'compare' => 'EXISTS',
-			);
+			$sql .= $wpdb->prepare( ' AND mt.meta_value < %d', $cutoff );
 		}
 
-		return get_posts( $args );
+		$ids = $wpdb->get_col( $sql ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+
+		return array_map( 'absint', $ids );
 	}
 
 	private function build_index( $dir ) {
