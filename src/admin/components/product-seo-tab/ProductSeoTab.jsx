@@ -36,7 +36,8 @@ export default function ProductSeoTab() {
   );
   const [faq, setFaq] = useState(initialMeta._wseo_faq || []);
   const [localInventory, setLocalInventory] = useState(
-    initialMeta._wseo_local_inventory === "1" || initialMeta._wseo_local_inventory === true,
+    initialMeta._wseo_local_inventory === "1" ||
+      initialMeta._wseo_local_inventory === true,
   );
 
   const [brandSuggestions, setBrandSuggestions] = useState([]);
@@ -49,12 +50,15 @@ export default function ProductSeoTab() {
   const [localBusinessConfigured, setLocalBusinessConfigured] = useState(null);
 
   useEffect(() => {
-    api.get("/settings").then((s) => {
-      const lb = s.wseo_local_seo;
-      setLocalBusinessConfigured(!!(lb && lb.business_name));
-    }).catch(() => {
-      setLocalBusinessConfigured(false);
-    });
+    api
+      .get("/settings")
+      .then((s) => {
+        const lb = s.wseo_local_seo;
+        setLocalBusinessConfigured(!!(lb && lb.business_name));
+      })
+      .catch(() => {
+        setLocalBusinessConfigured(false);
+      });
   }, []);
 
   // Read WooCommerce SKU from the General tab's _sku input
@@ -67,11 +71,15 @@ export default function ProductSeoTab() {
 
   useEffect(() => {
     const poll = () => {
-      const descInput = document.querySelector('input[name="_wseo_description"]');
+      const descInput = document.querySelector(
+        'input[name="_wseo_description"]',
+      );
       if (descInput) setMetaDescription(descInput.value);
       const ogInput = document.querySelector('input[name="_wseo_og_image"]');
       if (ogInput) setOgImage(ogInput.value);
-      const skuInput = document.querySelector("#_sku") || document.querySelector('input[name="_sku"]');
+      const skuInput =
+        document.querySelector("#_sku") ||
+        document.querySelector('input[name="_sku"]');
       if (skuInput) setWooSku(skuInput.value);
     };
     const interval = setInterval(poll, 1000);
@@ -144,26 +152,42 @@ export default function ProductSeoTab() {
       galleryMissingAlt,
       galleryTotal,
     }),
-    [shortDescWordCount, gtin, brand, wooSku, itemCondition, featuredImage, metaDescription, ogImage, galleryMissingAlt, galleryTotal],
+    [
+      shortDescWordCount,
+      gtin,
+      brand,
+      wooSku,
+      itemCondition,
+      featuredImage,
+      metaDescription,
+      ogImage,
+      galleryMissingAlt,
+      galleryTotal,
+    ],
   );
 
   const analysisItems = useContentAnalysis(formState);
   const completeness = useSchemaCompleteness(formState);
 
-  const handlePrimaryCategoryChange = useCallback((termId) => {
-    setPrimaryCategory(termId);
-    const input = document.querySelector('input[name="_wseo_primary_category"]');
-    if (input) {
-      input.value = termId;
-    } else {
-      const hidden = document.createElement("input");
-      hidden.type = "hidden";
-      hidden.name = "_wseo_primary_category";
-      hidden.value = termId;
-      const form = container?.closest("form");
-      if (form) form.appendChild(hidden);
-    }
-  }, [container]);
+  const handlePrimaryCategoryChange = useCallback(
+    (termId) => {
+      setPrimaryCategory(termId);
+      const input = document.querySelector(
+        'input[name="_wseo_primary_category"]',
+      );
+      if (input) {
+        input.value = termId;
+      } else {
+        const hidden = document.createElement("input");
+        hidden.type = "hidden";
+        hidden.name = "_wseo_primary_category";
+        hidden.value = termId;
+        const form = container?.closest("form");
+        if (form) form.appendChild(hidden);
+      }
+    },
+    [container],
+  );
 
   const fetchBrandSuggestions = async (query) => {
     if (!hasBrandTaxonomy || query.length < 2) {
@@ -174,7 +198,9 @@ export default function ProductSeoTab() {
 
     try {
       const res = await fetch(
-        `/wp-json/wp/v2/product_brand?search=${encodeURIComponent(query)}&per_page=10`,
+        `/wp-json/wp/v2/product_brand?search=${encodeURIComponent(
+          query,
+        )}&per_page=10`,
         { headers: { "X-WP-Nonce": window.novaToolsSEO?.nonce || "" } },
       );
       const terms = await res.json();
@@ -234,10 +260,14 @@ export default function ProductSeoTab() {
 
       {/* Product Schema Fields */}
       <div className="rounded-md border border-gray-200 bg-white p-4">
-        <h3 className="mb-3 text-sm font-semibold text-gray-700">Product Schema Data</h3>
+        <h3 className="mb-3 text-sm font-semibold text-gray-700">
+          Product Schema Data
+        </h3>
         <div className="grid grid-cols-2 gap-3">
           <div>
-            <label className="mb-1 block text-xs font-medium text-gray-600">GTIN (UPC/EAN)</label>
+            <label className="mb-1 block text-xs font-medium text-gray-600">
+              GTIN (UPC/EAN)
+            </label>
             <input
               type="text"
               value={gtin}
@@ -247,7 +277,9 @@ export default function ProductSeoTab() {
             />
           </div>
           <div>
-            <label className="mb-1 block text-xs font-medium text-gray-600">MPN</label>
+            <label className="mb-1 block text-xs font-medium text-gray-600">
+              MPN
+            </label>
             <input
               type="text"
               value={mpn}
@@ -257,7 +289,9 @@ export default function ProductSeoTab() {
             />
           </div>
           <div>
-            <label className="mb-1 block text-xs font-medium text-gray-600">ISBN</label>
+            <label className="mb-1 block text-xs font-medium text-gray-600">
+              ISBN
+            </label>
             <input
               type="text"
               value={isbn}
@@ -267,14 +301,18 @@ export default function ProductSeoTab() {
             />
           </div>
           <div className="relative">
-            <label className="mb-1 block text-xs font-medium text-gray-600">Brand</label>
+            <label className="mb-1 block text-xs font-medium text-gray-600">
+              Brand
+            </label>
             <input
               type="text"
               value={brand}
               onChange={handleBrandChange}
               onBlur={() => setTimeout(() => setShowBrandDropdown(false), 200)}
               className={inputCls}
-              placeholder={hasBrandTaxonomy ? "Search or type brand..." : "Brand name"}
+              placeholder={
+                hasBrandTaxonomy ? "Search or type brand..." : "Brand name"
+              }
             />
             {showBrandDropdown && brandSuggestions.length > 0 && (
               <ul className="absolute left-0 right-0 top-full z-50 max-h-40 overflow-y-auto rounded-b-md border border-gray-200 bg-white py-1 text-sm shadow-sm">
@@ -293,7 +331,9 @@ export default function ProductSeoTab() {
         </div>
 
         <div className="mt-3">
-          <label className="mb-1 block text-xs font-medium text-gray-600">Item Condition</label>
+          <label className="mb-1 block text-xs font-medium text-gray-600">
+            Item Condition
+          </label>
           <select
             value={itemCondition}
             onChange={(e) => setItemCondition(e.target.value)}
@@ -328,14 +368,18 @@ export default function ProductSeoTab() {
 
       {/* LocalInventory Toggle */}
       <div className="rounded-md border border-gray-200 bg-white p-4">
-        <h3 className="mb-2 text-sm font-semibold text-gray-700">Local Inventory</h3>
+        <h3 className="mb-2 text-sm font-semibold text-gray-700">
+          Local Inventory
+        </h3>
         <label className="flex items-center gap-2">
           <input
             type="checkbox"
             checked={localInventory}
             onChange={(e) => {
               setLocalInventory(e.target.checked);
-              const input = document.querySelector('input[name="_wseo_local_inventory"]');
+              const input = document.querySelector(
+                'input[name="_wseo_local_inventory"]',
+              );
               if (input) {
                 input.value = e.target.checked ? "1" : "";
               } else {
@@ -349,11 +393,14 @@ export default function ProductSeoTab() {
             }}
             className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
           />
-          <span className="text-sm text-gray-700">Declare physical stock for Local Inventory</span>
+          <span className="text-sm text-gray-700">
+            Declare physical stock for Local Inventory
+          </span>
         </label>
         {localInventory && localBusinessConfigured === false && (
           <div className="mt-2 rounded border border-yellow-200 bg-yellow-50 p-3 text-xs text-yellow-800">
-            LocalBusiness schema is not fully configured. LocalInventory requires a complete LocalBusiness profile.
+            LocalBusiness schema is not fully configured. LocalInventory
+            requires a complete LocalBusiness profile.
             <a
               href="#/local-seo"
               className="ml-1 font-semibold text-yellow-700 underline"
@@ -364,17 +411,14 @@ export default function ProductSeoTab() {
         )}
         {localInventory && localBusinessConfigured === true && (
           <p className="mt-2 text-xs text-gray-500">
-            This product will be included in LocalInventory schema when WooCommerce stock management is enabled.
+            This product will be included in LocalInventory schema when
+            WooCommerce stock management is enabled.
           </p>
         )}
       </div>
 
       {/* FAQ Builder */}
-      <FAQBuilder
-        postId={postId}
-        initialFaq={faq}
-        container={container}
-      />
+      <FAQBuilder postId={postId} initialFaq={faq} container={container} />
     </div>
   );
 }

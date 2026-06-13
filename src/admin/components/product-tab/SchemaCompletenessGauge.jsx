@@ -16,13 +16,19 @@ function gaugeStroke(pct) {
   return "stroke-red-500";
 }
 
-export default function SchemaCompletenessGauge({ checks, percentage, passed, total }) {
+export default function SchemaCompletenessGauge({
+  checks,
+  percentage,
+  passed,
+  total,
+}) {
   const dashOffset = CIRCUMFERENCE - (percentage / 100) * CIRCUMFERENCE;
 
   return (
     <div className="rounded-md border border-gray-200 bg-white p-4">
       <h3 className="mb-3 text-sm font-semibold text-gray-700">
-        Schema Completeness: <span className={gaugeColor(percentage)}>{percentage}%</span>
+        Schema Completeness:{" "}
+        <span className={gaugeColor(percentage)}>{percentage}%</span>
       </h3>
 
       <div className="flex items-start gap-4">
@@ -51,7 +57,9 @@ export default function SchemaCompletenessGauge({ checks, percentage, passed, to
             />
           </svg>
           <span
-            className={`absolute inset-0 flex items-center justify-center text-sm font-bold ${gaugeColor(percentage)}`}
+            className={`absolute inset-0 flex items-center justify-center text-sm font-bold ${gaugeColor(
+              percentage,
+            )}`}
           >
             {percentage}%
           </span>
@@ -61,7 +69,11 @@ export default function SchemaCompletenessGauge({ checks, percentage, passed, to
         <ul className="flex-1 space-y-1">
           {checks.map((check) => (
             <li key={check.key} className="flex items-start gap-1.5 text-xs">
-              <span className={`mt-0.5 ${check.present ? "text-green-600" : "text-red-400"}`}>
+              <span
+                className={`mt-0.5 ${
+                  check.present ? "text-green-600" : "text-red-400"
+                }`}
+              >
                 {check.present ? "✓" : "✗"}
               </span>
               <div className="min-w-0">

@@ -4,7 +4,9 @@ import * as api from "../../api";
 const API_KEY_PATTERN = /^[a-zA-Z0-9]{8,128}$/;
 
 export default function IndexNowSettings({ settings, setSetting }) {
-  const [enabled, setEnabled] = useState(settings.wseo_indexnow_enabled === "1");
+  const [enabled, setEnabled] = useState(
+    settings.wseo_indexnow_enabled === "1",
+  );
   const [apiKey, setApiKey] = useState(settings.wseo_indexnow_api_key || "");
   const [keyError, setKeyError] = useState("");
   const [asAvailable, setAsAvailable] = useState(true);
@@ -63,8 +65,10 @@ export default function IndexNowSettings({ settings, setSetting }) {
 
       {!asAvailable && (
         <div className="mt-3 rounded-md border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800">
-          Action Scheduler is not available. IndexNow requires Action Scheduler (bundled with WooCommerce) to process pings in the background.
-          Install and activate WooCommerce, or another plugin providing Action Scheduler, to enable this feature.
+          Action Scheduler is not available. IndexNow requires Action Scheduler
+          (bundled with WooCommerce) to process pings in the background. Install
+          and activate WooCommerce, or another plugin providing Action
+          Scheduler, to enable this feature.
         </div>
       )}
 
@@ -102,9 +106,7 @@ export default function IndexNowSettings({ settings, setSetting }) {
             placeholder="Enter your IndexNow API key"
             disabled={!asAvailable}
           />
-          {keyError && (
-            <p className="mt-1 text-xs text-red-500">{keyError}</p>
-          )}
+          {keyError && <p className="mt-1 text-xs text-red-500">{keyError}</p>}
           <p className="mt-1 text-xs text-gray-400">
             Get your key from{" "}
             <a

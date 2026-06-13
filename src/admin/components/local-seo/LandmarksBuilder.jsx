@@ -31,11 +31,10 @@ export default function LandmarksBuilder({ landmarks, onChange }) {
 
   return (
     <div>
-      <h3 className="text-lg font-medium text-gray-800">
-        Nearby Landmarks
-      </h3>
+      <h3 className="text-lg font-medium text-gray-800">Nearby Landmarks</h3>
       <p className="mt-1 text-sm text-gray-500">
-        Associate your business with nearby landmarks for hyper-local SEO signals.
+        Associate your business with nearby landmarks for hyper-local SEO
+        signals.
       </p>
 
       <div className="mt-4 space-y-2">

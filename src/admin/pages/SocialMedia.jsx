@@ -20,7 +20,7 @@ export default function SocialMedia() {
 
   const togglePinterest = useCallback(
     () => setPinterestRichPins((prev) => !prev),
-    []
+    [],
   );
 
   async function save() {

@@ -15,8 +15,14 @@ export default function useShortDescription() {
     let unsubscribe = null;
     if (window.wp?.data?.select("core/editor")) {
       const select = () => {
-        const excerpt = window.wp.data.select("core/editor")?.getEditedPostAttribute("excerpt");
-        return excerpt ? (typeof excerpt === "string" ? excerpt : excerpt.raw || "") : "";
+        const excerpt = window.wp.data
+          .select("core/editor")
+          ?.getEditedPostAttribute("excerpt");
+        return excerpt
+          ? typeof excerpt === "string"
+            ? excerpt
+            : excerpt.raw || ""
+          : "";
       };
 
       const update = () => setWordCount(countWords(select()));

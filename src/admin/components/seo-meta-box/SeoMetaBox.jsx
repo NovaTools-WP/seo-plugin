@@ -1,7 +1,15 @@
-import React, { useState, useEffect, useRef, useCallback, useMemo } from "react";
+import React, {
+  useState,
+  useEffect,
+  useRef,
+  useCallback,
+  useMemo,
+} from "react";
+import { Upload, X } from "lucide-react";
 import * as api from "../../api";
 import useSeoCompleteness from "./hooks/useSeoCompleteness";
 import SeoCompletenessGauge from "./SeoCompletenessGauge";
+import SeoPreview from "./SeoPreview";
 
 const TITLE_MAX = 60;
 const DESC_MAX = 160;
@@ -24,9 +32,7 @@ export default function SeoMetaBox() {
   );
   const [robots, setRobots] = useState(initialMeta._wseo_robots || "");
   const [ogTitle, setOgTitle] = useState(initialMeta._wseo_og_title || "");
-  const [ogDesc, setOgDesc] = useState(
-    initialMeta._wseo_og_description || "",
-  );
+  const [ogDesc, setOgDesc] = useState(initialMeta._wseo_og_description || "");
   const [ogImage, setOgImage] = useState(initialMeta._wseo_og_image || "");
   const [twitterCard, setTwitterCard] = useState(
     initialMeta._wseo_twitter_card || "summary_large_image",
@@ -41,9 +47,76 @@ export default function SeoMetaBox() {
     initialMeta._wseo_twitter_image || "",
   );
   const [localBusiness, setLocalBusiness] = useState(
-    initialMeta._wseo_local_business === "1" || initialMeta._wseo_local_business === true,
+    initialMeta._wseo_local_business === "1" ||
+      initialMeta._wseo_local_business === true,
   );
   const [saving, setSaving] = useState(false);
+
+  const selectImageMedia = (setter) => {
+    if (typeof window.wp === "undefined" || !window.wp.media) {
+      alert("WordPress Media Library is not enqueued.");
+      return;
+    }
+    const frame = window.wp.media({
+      title: "Select or Upload Social Media Image",
+      button: {
+        text: "Select Image",
+      },
+      multiple: false,
+      library: {
+        type: "image",
+      },
+    });
+    frame.on("select", () => {
+      const attachment = frame.state().get("selection").first().toJSON();
+      setter(attachment.url);
+    });
+    frame.open();
+  };
+
+  const renderImageField = (label, value, setter, placeholder) => {
+    return (
+      <div className="space-y-1">
+        <label className="block text-xs font-medium text-gray-600">
+          {label}
+        </label>
+        <div className="flex gap-2">
+          <input
+            type="url"
+            value={value}
+            onChange={(e) => setter(e.target.value)}
+            className="block w-full flex-1 rounded-md border border-gray-300 px-2 py-1.5 text-sm"
+            placeholder={placeholder}
+          />
+          <button
+            type="button"
+            onClick={() => selectImageMedia(setter)}
+            className="inline-flex items-center gap-1.5 rounded-md border border-gray-300 bg-white px-3 py-1.5 text-xs font-medium text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-1 transition-all whitespace-nowrap cursor-pointer"
+          >
+            <Upload className="h-3.5 w-3.5 text-gray-500" />
+            Select Image
+          </button>
+        </div>
+        {value && (
+          <div className="relative mt-2 inline-block rounded-md border border-gray-200 p-1 bg-gray-50 group">
+            <img
+              src={value}
+              alt="Social Preview"
+              className="h-14 w-auto rounded object-cover max-w-[200px]"
+            />
+            <button
+              type="button"
+              onClick={() => setter("")}
+              className="absolute -right-1.5 -top-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-white shadow-sm hover:bg-red-600 transition-all focus:outline-none cursor-pointer"
+              title="Remove image"
+            >
+              <X className="h-3 w-3" />
+            </button>
+          </div>
+        )}
+      </div>
+    );
+  };
 
   const featuredImage = Boolean(initialMeta._thumbnail_id);
 
@@ -58,24 +131,37 @@ export default function SeoMetaBox() {
       canonical,
       robots,
     }),
-    [title, description, ogImage, featuredImage, ogTitle, ogDesc, canonical, robots],
+    [
+      title,
+      description,
+      ogImage,
+      featuredImage,
+      ogTitle,
+      ogDesc,
+      canonical,
+      robots,
+    ],
   );
 
-  const { checks, percentage, passed, total } = useSeoCompleteness(seoFormState);
+  const { checks, percentage, passed, total } =
+    useSeoCompleteness(seoFormState);
 
   const saveTimer = useRef(null);
   const latestFields = useRef({});
 
-  const saveMeta = useCallback(async (fields) => {
-    if (!postId) return;
-    setSaving(true);
-    try {
-      await api.post(`/post-meta/${postId}`, fields);
-    } catch {
-      // silent fail — will retry on next change
-    }
-    setSaving(false);
-  }, [postId]);
+  const saveMeta = useCallback(
+    async (fields) => {
+      if (!postId) return;
+      setSaving(true);
+      try {
+        await api.post(`/post-meta/${postId}`, fields);
+      } catch {
+        // silent fail — will retry on next change
+      }
+      setSaving(false);
+    },
+    [postId],
+  );
 
   // Debounced save: collect latest field values and save after user stops typing
   useEffect(() => {
@@ -103,10 +189,19 @@ export default function SeoMetaBox() {
       if (saveTimer.current) clearTimeout(saveTimer.current);
     };
   }, [
-    title, description, canonical, robots,
-    ogTitle, ogDesc, ogImage,
-    twitterCard, twitterTitle, twitterDesc, twitterImage,
-    localBusiness, saveMeta,
+    title,
+    description,
+    canonical,
+    robots,
+    ogTitle,
+    ogDesc,
+    ogImage,
+    twitterCard,
+    twitterTitle,
+    twitterDesc,
+    twitterImage,
+    localBusiness,
+    saveMeta,
   ]);
 
   // Also sync to hidden inputs for classic editor fallback
@@ -128,9 +223,17 @@ export default function SeoMetaBox() {
       }
     });
   }, [
-    title, description, canonical, robots,
-    ogTitle, ogDesc, ogImage,
-    twitterCard, twitterTitle, twitterDesc, twitterImage,
+    title,
+    description,
+    canonical,
+    robots,
+    ogTitle,
+    ogDesc,
+    ogImage,
+    twitterCard,
+    twitterTitle,
+    twitterDesc,
+    twitterImage,
     localBusiness,
   ]);
 
@@ -143,17 +246,27 @@ export default function SeoMetaBox() {
         total={total}
       />
 
-      <SnippetPreview
-        title={title || "Post Title"}
-        description={description || "Meta description will appear here..."}
+      <SeoPreview
+        title={title}
+        description={description}
         url={permalink}
+        ogTitle={ogTitle}
+        ogDesc={ogDesc}
+        ogImage={ogImage}
+        twitterCard={twitterCard}
+        twitterTitle={twitterTitle}
+        twitterDesc={twitterDesc}
+        twitterImage={twitterImage}
+        initialMeta={initialMeta}
       />
 
       <div>
         <label className="block text-sm font-medium text-gray-700">
           SEO Title{" "}
           <span
-            className={`text-xs ${title.length > TITLE_MAX ? "text-red-500" : "text-gray-400"}`}
+            className={`text-xs ${
+              title.length > TITLE_MAX ? "text-red-500" : "text-gray-400"
+            }`}
           >
             {title.length}/{TITLE_MAX}
           </span>
@@ -171,7 +284,9 @@ export default function SeoMetaBox() {
         <label className="block text-sm font-medium text-gray-700">
           Meta Description{" "}
           <span
-            className={`text-xs ${description.length > DESC_MAX ? "text-red-500" : "text-gray-400"}`}
+            className={`text-xs ${
+              description.length > DESC_MAX ? "text-red-500" : "text-gray-400"
+            }`}
           >
             {description.length}/{DESC_MAX}
           </span>
@@ -244,18 +359,12 @@ export default function SeoMetaBox() {
               placeholder="Falls back to meta description"
             />
           </div>
-          <div>
-            <label className="block text-xs font-medium text-gray-600">
-              OG Image URL
-            </label>
-            <input
-              type="url"
-              value={ogImage}
-              onChange={(e) => setOgImage(e.target.value)}
-              className="mt-1 block w-full rounded-md border border-gray-300 px-2 py-1.5 text-sm"
-              placeholder="Falls back to featured image"
-            />
-          </div>
+          {renderImageField(
+            "OG Image URL",
+            ogImage,
+            setOgImage,
+            "Falls back to featured image",
+          )}
           <div>
             <label className="block text-xs font-medium text-gray-600">
               Twitter Card Type
@@ -293,18 +402,12 @@ export default function SeoMetaBox() {
               placeholder="Falls back to OG description"
             />
           </div>
-          <div>
-            <label className="block text-xs font-medium text-gray-600">
-              Twitter Image URL
-            </label>
-            <input
-              type="url"
-              value={twitterImage}
-              onChange={(e) => setTwitterImage(e.target.value)}
-              className="mt-1 block w-full rounded-md border border-gray-300 px-2 py-1.5 text-sm"
-              placeholder="Falls back to OG image"
-            />
-          </div>
+          {renderImageField(
+            "Twitter Image URL",
+            twitterImage,
+            setTwitterImage,
+            "Falls back to OG image",
+          )}
         </div>
       </details>
 
@@ -320,23 +423,7 @@ export default function SeoMetaBox() {
         </label>
       </div>
 
-      {saving && (
-        <p className="text-xs text-gray-400">Saving...</p>
-      )}
-    </div>
-  );
-}
-
-function SnippetPreview({ title, description, url }) {
-  return (
-    <div className="rounded-md border border-gray-200 bg-white p-4">
-      <p className="text-sm text-gray-800">{url}</p>
-      <p className="mt-0.5 text-lg font-medium text-blue-700 hover:underline">
-        {title}
-      </p>
-      <p className="mt-0.5 text-sm text-gray-600 line-clamp-2">
-        {description}
-      </p>
+      {saving && <p className="text-xs text-gray-400">Saving...</p>}
     </div>
   );
 }

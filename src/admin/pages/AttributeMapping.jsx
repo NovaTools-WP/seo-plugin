@@ -147,9 +147,7 @@ export default function AttributeMapping() {
   };
 
   const handleSave = async () => {
-    const valid = mappings.filter(
-      (m) => m.attribute_slug && m.schema_property,
-    );
+    const valid = mappings.filter((m) => m.attribute_slug && m.schema_property);
     setSaving(true);
     setMessage("");
     try {

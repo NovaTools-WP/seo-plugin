@@ -34,10 +34,7 @@ export default function SeoCompletenessGauge({
       <div className="flex items-start gap-4">
         {/* SVG gauge */}
         <div className="relative shrink-0">
-          <svg
-            width={(RADIUS + STROKE) * 2}
-            height={(RADIUS + STROKE) * 2}
-          >
+          <svg width={(RADIUS + STROKE) * 2} height={(RADIUS + STROKE) * 2}>
             <circle
               cx={RADIUS + STROKE}
               cy={RADIUS + STROKE}
@@ -60,7 +57,9 @@ export default function SeoCompletenessGauge({
             />
           </svg>
           <span
-            className={`absolute inset-0 flex items-center justify-center text-sm font-bold ${gaugeColor(percentage)}`}
+            className={`absolute inset-0 flex items-center justify-center text-sm font-bold ${gaugeColor(
+              percentage,
+            )}`}
           >
             {percentage}%
           </span>
@@ -71,7 +70,9 @@ export default function SeoCompletenessGauge({
           {checks.map((check) => (
             <li key={check.key} className="flex items-start gap-1.5 text-xs">
               <span
-                className={`mt-0.5 ${check.present ? "text-green-600" : "text-red-400"}`}
+                className={`mt-0.5 ${
+                  check.present ? "text-green-600" : "text-red-400"
+                }`}
               >
                 {check.present ? "✓" : "✗"}
               </span>

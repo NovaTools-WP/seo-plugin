@@ -20,7 +20,11 @@ export default function GeoShapeBuilder({ coordinates, onChange }) {
   };
 
   const validCount = coordinates.filter(
-    (c) => c.lat !== "" && c.lng !== "" && !isNaN(parseFloat(c.lat)) && !isNaN(parseFloat(c.lng)),
+    (c) =>
+      c.lat !== "" &&
+      c.lng !== "" &&
+      !isNaN(parseFloat(c.lat)) &&
+      !isNaN(parseFloat(c.lng)),
   ).length;
 
   return (
@@ -29,12 +33,14 @@ export default function GeoShapeBuilder({ coordinates, onChange }) {
         Service Area Polygon
       </h3>
       <p className="mt-1 text-sm text-gray-500">
-        Define a service area polygon for your business. Requires at least 3 coordinate points.
+        Define a service area polygon for your business. Requires at least 3
+        coordinate points.
       </p>
 
       {coordinates.length > 0 && coordinates.length < 3 && (
         <div className="mt-3 rounded-md border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800">
-          At least 3 points are required to form a valid polygon. Currently {coordinates.length} point(s).
+          At least 3 points are required to form a valid polygon. Currently{" "}
+          {coordinates.length} point(s).
         </div>
       )}
 

@@ -26,7 +26,9 @@ export default function Dashboard() {
     return (
       <div>
         <h2 className="text-2xl font-semibold text-gray-900">SEO Dashboard</h2>
-        <p className="mt-2 text-sm text-red-500">Error loading dashboard data.</p>
+        <p className="mt-2 text-sm text-red-500">
+          Error loading dashboard data.
+        </p>
       </div>
     );
   }
@@ -47,7 +49,11 @@ export default function Dashboard() {
       disabled: "Disabled",
     };
     return (
-      <span className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${colors[status] || "bg-gray-100 text-gray-600"}`}>
+      <span
+        className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${
+          colors[status] || "bg-gray-100 text-gray-600"
+        }`}
+      >
         {labels[status] || status}
       </span>
     );
@@ -64,7 +70,9 @@ export default function Dashboard() {
         <div className="rounded-lg border border-gray-200 bg-white p-6">
           <p className="text-sm font-medium text-gray-500">Sitemap</p>
           <div className="mt-2">
-            <StatusBadge status={data.sitemap_enabled ? "enabled" : "disabled"} />
+            <StatusBadge
+              status={data.sitemap_enabled ? "enabled" : "disabled"}
+            />
           </div>
         </div>
 
@@ -83,11 +91,11 @@ export default function Dashboard() {
         </div>
 
         <div className="rounded-lg border border-gray-200 bg-white p-6">
-          <p className="text-sm font-medium text-gray-500">Managed Post Types</p>
+          <p className="text-sm font-medium text-gray-500">
+            Managed Post Types
+          </p>
           <p className="mt-2 text-sm text-gray-900">
-            {data.post_types?.length > 0
-              ? data.post_types.join(", ")
-              : "None"}
+            {data.post_types?.length > 0 ? data.post_types.join(", ") : "None"}
           </p>
         </div>
       </div>

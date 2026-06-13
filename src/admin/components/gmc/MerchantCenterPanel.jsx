@@ -53,10 +53,15 @@ export default function MerchantCenterPanel() {
             Google Merchant Center
           </h3>
           <p className="mt-1 text-sm text-gray-500">
-            Sync your WooCommerce products to Google Merchant Center for Shopping ads.
+            Sync your WooCommerce products to Google Merchant Center for
+            Shopping ads.
           </p>
         </div>
-        <ConnectionStatus connected={connected} email={email} reconnectRequired={reconnectRequired} />
+        <ConnectionStatus
+          connected={connected}
+          email={email}
+          reconnectRequired={reconnectRequired}
+        />
       </div>
 
       <div className="mb-6 border-t border-gray-100 pt-4">
@@ -79,12 +84,27 @@ export default function MerchantCenterPanel() {
           <SyncControls
             syncActive={syncActive}
             syncPaused={syncPaused}
-            onStarted={() => { setSyncActive(true); setSyncPaused(false); }}
-            onCancelled={() => { setSyncActive(false); setSyncPaused(false); }}
-            onPaused={() => { setSyncActive(false); setSyncPaused(true); }}
-            onResumed={() => { setSyncActive(true); setSyncPaused(false); }}
+            onStarted={() => {
+              setSyncActive(true);
+              setSyncPaused(false);
+            }}
+            onCancelled={() => {
+              setSyncActive(false);
+              setSyncPaused(false);
+            }}
+            onPaused={() => {
+              setSyncActive(false);
+              setSyncPaused(true);
+            }}
+            onResumed={() => {
+              setSyncActive(true);
+              setSyncPaused(false);
+            }}
           />
-          <ProgressBar syncActive={syncActive || syncPaused} onStatusUpdate={handleStatusUpdate} />
+          <ProgressBar
+            syncActive={syncActive || syncPaused}
+            onStatusUpdate={handleStatusUpdate}
+          />
           <SyncLog syncActive={syncActive || syncPaused} />
         </div>
       )}

@@ -47,7 +47,10 @@ export default function AiBotRules({ settings, setSetting }) {
       }
       return {
         ...prev,
-        preset_bots: [...prev.preset_bots, { user_agent: userAgent, blocked: true, path_rules: [] }],
+        preset_bots: [
+          ...prev.preset_bots,
+          { user_agent: userAgent, blocked: true, path_rules: [] },
+        ],
       };
     });
   }
@@ -78,7 +81,10 @@ export default function AiBotRules({ settings, setSetting }) {
   function removePresetPathRule(userAgent, ruleIndex) {
     const bot = rules.preset_bots.find((b) => b.user_agent === userAgent);
     const current = bot?.path_rules || [];
-    setPresetPathRule(userAgent, current.filter((_, i) => i !== ruleIndex));
+    setPresetPathRule(
+      userAgent,
+      current.filter((_, i) => i !== ruleIndex),
+    );
   }
 
   function addCustomBot() {
@@ -87,7 +93,10 @@ export default function AiBotRules({ settings, setSetting }) {
     if (rules.custom_bots.find((b) => b.user_agent === name)) return;
     setRules((prev) => ({
       ...prev,
-      custom_bots: [...prev.custom_bots, { user_agent: name, blocked: true, path_rules: [] }],
+      custom_bots: [
+        ...prev.custom_bots,
+        { user_agent: name, blocked: true, path_rules: [] },
+      ],
     }));
     setNewCustomBot("");
   }
@@ -121,7 +130,14 @@ export default function AiBotRules({ settings, setSetting }) {
     setSaving(false);
   }
 
-  function renderBotRow(bot, onToggle, onRemove, onAddPath, onUpdatePath, onRemovePath) {
+  function renderBotRow(
+    bot,
+    onToggle,
+    onRemove,
+    onAddPath,
+    onUpdatePath,
+    onRemovePath,
+  ) {
     return (
       <div
         key={bot.user_agent}
@@ -161,7 +177,9 @@ export default function AiBotRules({ settings, setSetting }) {
               <div key={ri} className="flex items-center gap-2">
                 <select
                   value={rule.allow ? "allow" : "disallow"}
-                  onChange={(e) => onUpdatePath(ri, "allow", e.target.value === "allow")}
+                  onChange={(e) =>
+                    onUpdatePath(ri, "allow", e.target.value === "allow")
+                  }
                   className="rounded border border-gray-300 px-1.5 py-0.5 text-xs"
                 >
                   <option value="disallow">Disallow</option>
@@ -214,8 +232,9 @@ export default function AiBotRules({ settings, setSetting }) {
               user_agent: preset.user_agent,
               blocked: getPresetBlocked(preset.user_agent),
               path_rules:
-                rules.preset_bots.find((b) => b.user_agent === preset.user_agent)
-                  ?.path_rules || [],
+                rules.preset_bots.find(
+                  (b) => b.user_agent === preset.user_agent,
+                )?.path_rules || [],
             },
             () => togglePreset(preset.user_agent),
             null,
@@ -241,7 +260,13 @@ export default function AiBotRules({ settings, setSetting }) {
                   ...prev,
                   custom_bots: prev.custom_bots.map((b, bi) =>
                     bi === i
-                      ? { ...b, path_rules: [...(b.path_rules || []), { path: "", allow: false }] }
+                      ? {
+                          ...b,
+                          path_rules: [
+                            ...(b.path_rules || []),
+                            { path: "", allow: false },
+                          ],
+                        }
                       : b,
                   ),
                 }));
@@ -262,7 +287,12 @@ export default function AiBotRules({ settings, setSetting }) {
                   ...prev,
                   custom_bots: prev.custom_bots.map((b, bi) =>
                     bi === i
-                      ? { ...b, path_rules: (b.path_rules || []).filter((_, pi) => pi !== ri) }
+                      ? {
+                          ...b,
+                          path_rules: (b.path_rules || []).filter(
+                            (_, pi) => pi !== ri,
+                          ),
+                        }
                       : b,
                   ),
                 }));
@@ -276,7 +306,9 @@ export default function AiBotRules({ settings, setSetting }) {
             type="text"
             value={newCustomBot}
             onChange={(e) => setNewCustomBot(e.target.value)}
-            onKeyDown={(e) => e.key === "Enter" && (e.preventDefault(), addCustomBot())}
+            onKeyDown={(e) =>
+              e.key === "Enter" && (e.preventDefault(), addCustomBot())
+            }
             placeholder="User-agent name"
             className="rounded-md border border-gray-300 px-3 py-2 text-sm"
           />

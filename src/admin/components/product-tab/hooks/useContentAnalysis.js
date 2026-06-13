@@ -24,7 +24,8 @@ export default function useContentAnalysis(formState) {
         id: "short-desc",
         label: "Short Description",
         status: "red",
-        message: "Short description is missing. Add one for better snippet display.",
+        message:
+          "Short description is missing. Add one for better snippet display.",
       });
     } else if (shortDescWordCount < 20) {
       items.push({
@@ -51,9 +52,21 @@ export default function useContentAnalysis(formState) {
 
     // Schema completeness fields
     const schemaFields = [
-      { key: "gtin", label: "GTIN", missing: "Add a GTIN to improve rich snippet eligibility." },
-      { key: "brand", label: "Brand", missing: "Assign a brand to help Google identify your product." },
-      { key: "sku", label: "SKU", missing: "Add an SKU for product identification in search results." },
+      {
+        key: "gtin",
+        label: "GTIN",
+        missing: "Add a GTIN to improve rich snippet eligibility.",
+      },
+      {
+        key: "brand",
+        label: "Brand",
+        missing: "Assign a brand to help Google identify your product.",
+      },
+      {
+        key: "sku",
+        label: "SKU",
+        missing: "Add an SKU for product identification in search results.",
+      },
       {
         key: "itemCondition",
         label: "Item Condition",
@@ -62,7 +75,8 @@ export default function useContentAnalysis(formState) {
       {
         key: "featuredImage",
         label: "Featured Image",
-        missing: "Add a featured image — it appears in search results and social shares.",
+        missing:
+          "Add a featured image — it appears in search results and social shares.",
       },
       {
         key: "metaDescription",

@@ -1,9 +1,21 @@
 import { useMemo } from "react";
 
 const SCHEMA_FIELDS = [
-  { key: "gtin", label: "GTIN", suggestion: "Add a GTIN to improve rich snippet eligibility." },
-  { key: "brand", label: "Brand", suggestion: "Assign a brand to help Google identify your product." },
-  { key: "sku", label: "SKU", suggestion: "Add an SKU for product identification in search results." },
+  {
+    key: "gtin",
+    label: "GTIN",
+    suggestion: "Add a GTIN to improve rich snippet eligibility.",
+  },
+  {
+    key: "brand",
+    label: "Brand",
+    suggestion: "Assign a brand to help Google identify your product.",
+  },
+  {
+    key: "sku",
+    label: "SKU",
+    suggestion: "Add an SKU for product identification in search results.",
+  },
   {
     key: "itemCondition",
     label: "Item Condition",
@@ -12,14 +24,19 @@ const SCHEMA_FIELDS = [
   {
     key: "featuredImage",
     label: "Featured Image",
-    suggestion: "Add a featured image — it appears in search results and social shares.",
+    suggestion:
+      "Add a featured image — it appears in search results and social shares.",
   },
   {
     key: "metaDescription",
     label: "Meta Description",
     suggestion: "Write a meta description to control your search snippet.",
   },
-  { key: "ogImage", label: "OG Image", suggestion: "Set an OG image for better social media previews." },
+  {
+    key: "ogImage",
+    label: "OG Image",
+    suggestion: "Set an OG image for better social media previews.",
+  },
 ];
 
 /**

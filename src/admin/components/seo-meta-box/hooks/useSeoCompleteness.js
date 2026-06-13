@@ -45,8 +45,7 @@ const SEO_FIELDS = [
   {
     key: "robots",
     label: "Robots Directive",
-    suggestion:
-      "Explicitly set robots to control search engine indexing.",
+    suggestion: "Explicitly set robots to control search engine indexing.",
   },
 ];
 
@@ -63,9 +62,7 @@ export default function useSeoCompleteness(formState) {
 
     const checks = SEO_FIELDS.map((field) => {
       const value = formState[field.key];
-      const present = Array.isArray(value)
-        ? value.length > 0
-        : Boolean(value);
+      const present = Array.isArray(value) ? value.length > 0 : Boolean(value);
       if (present) passed++;
       return {
         key: field.key,

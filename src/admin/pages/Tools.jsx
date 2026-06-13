@@ -177,9 +177,7 @@ function YoastImportSection() {
 
   return (
     <div>
-      <h3 className="text-lg font-medium text-gray-900">
-        Yoast SEO Importer
-      </h3>
+      <h3 className="text-lg font-medium text-gray-900">Yoast SEO Importer</h3>
       <p className="mt-1 text-sm text-gray-500">
         Migrate SEO data from Yoast SEO to NovaTools SEO.
       </p>

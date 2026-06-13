@@ -12,10 +12,9 @@ export default function PrimaryCategorySelector({ postId, value, onChange }) {
       setLoading(true);
       try {
         // Fetch product categories via WP REST
-        const res = await fetch(
-          `/wp-json/wp/v2/product_cat?post=${postId}`,
-          { headers: { "X-WP-Nonce": window.novaToolsSEO?.nonce || "" } },
-        );
+        const res = await fetch(`/wp-json/wp/v2/product_cat?post=${postId}`, {
+          headers: { "X-WP-Nonce": window.novaToolsSEO?.nonce || "" },
+        });
         if (!res.ok) {
           // Fallback: use terms from post data
           const postRes = await get(`/post-meta/${postId}`);
@@ -52,7 +51,9 @@ export default function PrimaryCategorySelector({ postId, value, onChange }) {
   if (loading) {
     return (
       <div className="rounded-md border border-gray-200 bg-white p-4">
-        <h3 className="text-sm font-semibold text-gray-700">Primary Category</h3>
+        <h3 className="text-sm font-semibold text-gray-700">
+          Primary Category
+        </h3>
         <p className="mt-1 text-xs text-gray-400">Loading…</p>
       </div>
     );
@@ -61,7 +62,9 @@ export default function PrimaryCategorySelector({ postId, value, onChange }) {
   if (categories.length === 0) {
     return (
       <div className="rounded-md border border-gray-200 bg-white p-4">
-        <h3 className="text-sm font-semibold text-gray-700">Primary Category</h3>
+        <h3 className="text-sm font-semibold text-gray-700">
+          Primary Category
+        </h3>
         <p className="mt-1 text-xs text-yellow-700">
           Assign at least one category to set a primary category.
         </p>
@@ -72,18 +75,27 @@ export default function PrimaryCategorySelector({ postId, value, onChange }) {
   if (categories.length === 1) {
     return (
       <div className="rounded-md border border-gray-200 bg-white p-4">
-        <h3 className="text-sm font-semibold text-gray-700">Primary Category</h3>
+        <h3 className="text-sm font-semibold text-gray-700">
+          Primary Category
+        </h3>
         <p className="mt-1 text-xs text-green-700">
-          {categories[0].name} <span className="text-gray-400">(auto-assigned)</span>
+          {categories[0].name}{" "}
+          <span className="text-gray-400">(auto-assigned)</span>
         </p>
-        <input type="hidden" name="_wseo_primary_category" value={categories[0].id} />
+        <input
+          type="hidden"
+          name="_wseo_primary_category"
+          value={categories[0].id}
+        />
       </div>
     );
   }
 
   return (
     <div className="rounded-md border border-gray-200 bg-white p-4">
-      <label className="block text-sm font-semibold text-gray-700">Primary Category</label>
+      <label className="block text-sm font-semibold text-gray-700">
+        Primary Category
+      </label>
       <select
         value={value || ""}
         onChange={(e) => onChange(Number(e.target.value))}

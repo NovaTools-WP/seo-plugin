@@ -7,9 +7,7 @@ import AttributeMapping from "./AttributeMapping";
 export default function WooCommerceSEO() {
   return (
     <div>
-      <h2 className="text-2xl font-semibold text-gray-900">
-        WooCommerce SEO
-      </h2>
+      <h2 className="text-2xl font-semibold text-gray-900">WooCommerce SEO</h2>
       <p className="mt-1 mb-6 text-sm text-gray-500">
         Configure SEO settings for WooCommerce shop pages, faceted URLs,
         taxonomy archives, and product schema attributes.

@@ -1,12 +1,22 @@
 import React, { useState } from "react";
 
-export default function GalleryAltTextScanner({ images, total, missingAlt, loading, generating, onBulkGenerate, error }) {
+export default function GalleryAltTextScanner({
+  images,
+  total,
+  missingAlt,
+  loading,
+  generating,
+  onBulkGenerate,
+  error,
+}) {
   const [confirmOpen, setConfirmOpen] = useState(false);
 
   if (loading) {
     return (
       <div className="rounded-md border border-gray-200 bg-white p-4">
-        <h3 className="text-sm font-semibold text-gray-700">Gallery Alt Text</h3>
+        <h3 className="text-sm font-semibold text-gray-700">
+          Gallery Alt Text
+        </h3>
         <p className="mt-1 text-xs text-gray-400">Loading images…</p>
       </div>
     );
@@ -15,7 +25,9 @@ export default function GalleryAltTextScanner({ images, total, missingAlt, loadi
   if (total === 0) {
     return (
       <div className="rounded-md border border-gray-200 bg-white p-4">
-        <h3 className="text-sm font-semibold text-gray-700">Gallery Alt Text</h3>
+        <h3 className="text-sm font-semibold text-gray-700">
+          Gallery Alt Text
+        </h3>
         <p className="mt-1 text-xs text-yellow-700">
           No gallery images found. Add images to improve product SEO.
         </p>
@@ -64,9 +76,7 @@ export default function GalleryAltTextScanner({ images, total, missingAlt, loadi
         </ul>
       )}
 
-      {error && (
-        <p className="mb-2 text-xs text-red-600">{error}</p>
-      )}
+      {error && <p className="mb-2 text-xs text-red-600">{error}</p>}
 
       {missingAlt > 0 && !confirmOpen && (
         <button
@@ -82,9 +92,12 @@ export default function GalleryAltTextScanner({ images, total, missingAlt, loadi
       {confirmOpen && (
         <div className="rounded border border-yellow-200 bg-yellow-50 p-3">
           <p className="text-xs text-yellow-800">
-            This will generate alt text for {missingAlt} image{missingAlt !== 1 ? "s" : ""} with
-            missing descriptions using the format:{" "}
-            <code className="text-[11px]">[Product Title] - [Primary Category] - Image [N]</code>
+            This will generate alt text for {missingAlt} image
+            {missingAlt !== 1 ? "s" : ""} with missing descriptions using the
+            format:{" "}
+            <code className="text-[11px]">
+              [Product Title] - [Primary Category] - Image [N]
+            </code>
           </p>
           <div className="mt-2 flex gap-2">
             <button

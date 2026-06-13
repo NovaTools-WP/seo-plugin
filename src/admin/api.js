@@ -1,5 +1,4 @@
-const BASE =
-  (window.novaToolsSEO?.apiUrl || "/wp-json/") + "novatools-seo/v1";
+const BASE = (window.novaToolsSEO?.apiUrl || "/wp-json/") + "novatools-seo/v1";
 
 function headers() {
   const h = { "Content-Type": "application/json" };

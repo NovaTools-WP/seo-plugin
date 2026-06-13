@@ -21,19 +21,22 @@ export default {
         find: "react/jsx-runtime",
         replacement: path.resolve(
           __dirname,
-          "./src/admin/externals/react-jsx-runtime.js"
+          "./src/admin/externals/react-jsx-runtime.js",
         ),
       },
       {
         find: "react-dom/client",
         replacement: path.resolve(
           __dirname,
-          "./src/admin/externals/react-dom-client.js"
+          "./src/admin/externals/react-dom-client.js",
         ),
       },
       {
         find: "react-dom",
-        replacement: path.resolve(__dirname, "./src/admin/externals/react-dom.js"),
+        replacement: path.resolve(
+          __dirname,
+          "./src/admin/externals/react-dom.js",
+        ),
       },
       {
         find: "react",

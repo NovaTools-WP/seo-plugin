@@ -58,10 +58,15 @@ export default function useGalleryImages(postId, initialGalleryStr) {
             id: m.id,
             title: m.title?.rendered || "",
             alt: m.alt_text || "",
-            sourceUrl: m.media_details?.sizes?.thumbnail?.source_url || m.source_url || "",
+            sourceUrl:
+              m.media_details?.sizes?.thumbnail?.source_url ||
+              m.source_url ||
+              "",
           };
         }
-        const ordered = ids.map((id) => map[id] || { id, title: "", alt: "", sourceUrl: "" });
+        const ordered = ids.map(
+          (id) => map[id] || { id, title: "", alt: "", sourceUrl: "" },
+        );
         setImages(ordered);
       } else {
         // Fallback: use wp.data media store if available
@@ -77,7 +82,9 @@ export default function useGalleryImages(postId, initialGalleryStr) {
           });
           setImages(ordered);
         } else {
-          setImages(ids.map((id) => ({ id, title: "", alt: "", sourceUrl: "" })));
+          setImages(
+            ids.map((id) => ({ id, title: "", alt: "", sourceUrl: "" })),
+          );
         }
       }
     } catch (e) {
@@ -112,7 +119,18 @@ export default function useGalleryImages(postId, initialGalleryStr) {
   }, [fetchImages]);
 
   const total = images.length;
-  const missingAlt = images.filter((img) => !img.alt || img.alt.trim() === "").length;
+  const missingAlt = images.filter(
+    (img) => !img.alt || img.alt.trim() === "",
+  ).length;
 
-  return { images, total, missingAlt, loading, refresh: fetchImages, bulkGenerate, generating, error };
+  return {
+    images,
+    total,
+    missingAlt,
+    loading,
+    refresh: fetchImages,
+    bulkGenerate,
+    generating,
+    error,
+  };
 }

@@ -116,6 +116,8 @@ class MetaBox {
 			return;
 		}
 
+		wp_enqueue_media();
+
 		$manifest_dir = NOVATOOLS_SEO_DIR . '/assets/admin/dist';
 
 		if ( DependencyCheck::is_novatools_active() ) {
@@ -152,6 +154,12 @@ class MetaBox {
 		$data = array();
 		foreach ( $keys as $key ) {
 			$data[ $key ] = get_post_meta( $post_id, $key, true );
+		}
+
+		if ( has_post_thumbnail( $post_id ) ) {
+			$data['_thumbnail_url'] = get_the_post_thumbnail_url( $post_id, 'large' );
+		} else {
+			$data['_thumbnail_url'] = '';
 		}
 
 		return $data;

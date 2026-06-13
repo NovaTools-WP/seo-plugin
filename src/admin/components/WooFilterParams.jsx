@@ -52,8 +52,8 @@ export default function WooFilterParams() {
         <p className="mt-1 text-xs text-gray-400">
           URLs containing these query parameters will receive noindex, nofollow
           meta tags and X-Robots-Tag headers. Use{" "}
-          <code className="rounded bg-gray-100 px-1">param_*</code> for
-          wildcard matching.
+          <code className="rounded bg-gray-100 px-1">param_*</code> for wildcard
+          matching.
         </p>
       </div>
 

@@ -25,7 +25,9 @@ export default function Sitemaps() {
     setSaving(true);
     setMessage("");
     try {
-      await api.post("/settings", { wseo_sitemap_enabled: checked ? "1" : "0" });
+      await api.post("/settings", {
+        wseo_sitemap_enabled: checked ? "1" : "0",
+      });
       setMessage("Sitemap " + (checked ? "enabled" : "disabled") + ".");
     } catch {
       setMessage("Error updating setting.");
@@ -73,9 +75,7 @@ export default function Sitemaps() {
       <div className="max-w-xl space-y-6">
         <div className="flex items-center justify-between rounded-lg border border-gray-200 bg-white p-4">
           <div>
-            <p className="text-sm font-medium text-gray-900">
-              XML Sitemap
-            </p>
+            <p className="text-sm font-medium text-gray-900">XML Sitemap</p>
             <p className="text-xs text-gray-500">
               Generate static sitemaps on content changes
             </p>
@@ -153,9 +153,7 @@ export default function Sitemaps() {
                   >
                     {siteUrl}sitemap.xml
                   </a>
-                  <span className="ml-2 text-xs text-gray-400">
-                    (index)
-                  </span>
+                  <span className="ml-2 text-xs text-gray-400">(index)</span>
                 </li>
                 {postTypes.map((t) => (
                   <li key={t.name}>

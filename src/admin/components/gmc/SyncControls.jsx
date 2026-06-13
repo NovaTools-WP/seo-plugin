@@ -1,7 +1,14 @@
 import React, { useState } from "react";
 import * as api from "../../api";
 
-export default function SyncControls({ syncActive, syncPaused, onStarted, onCancelled, onPaused, onResumed }) {
+export default function SyncControls({
+  syncActive,
+  syncPaused,
+  onStarted,
+  onCancelled,
+  onPaused,
+  onResumed,
+}) {
   const [starting, setStarting] = useState(false);
 
   async function startSync() {

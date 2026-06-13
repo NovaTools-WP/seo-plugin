@@ -575,9 +575,7 @@ export default function LocalSEO() {
 
       {/* Geo Coordinates */}
       <section className="mt-8 space-y-4">
-        <h3 className="text-lg font-medium text-gray-800">
-          Geo Coordinates
-        </h3>
+        <h3 className="text-lg font-medium text-gray-800">Geo Coordinates</h3>
 
         <div className="grid grid-cols-2 gap-4">
           <div>
@@ -592,17 +590,19 @@ export default function LocalSEO() {
                 set("latitude", e.target.value);
               }}
               className={`mt-1 block w-full rounded-md border px-3 py-2 text-sm ${
-                settings.latitude !== "" && !validateCoords(settings.latitude, settings.longitude)
+                settings.latitude !== "" &&
+                !validateCoords(settings.latitude, settings.longitude)
                   ? "border-red-500"
                   : "border-gray-300"
               }`}
               placeholder="59.4370"
             />
-            {settings.latitude !== "" && !validateCoords(settings.latitude, "") && (
-              <p className="mt-1 text-xs text-red-500">
-                Must be a number between -90 and 90
-              </p>
-            )}
+            {settings.latitude !== "" &&
+              !validateCoords(settings.latitude, "") && (
+                <p className="mt-1 text-xs text-red-500">
+                  Must be a number between -90 and 90
+                </p>
+              )}
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700">
@@ -616,17 +616,19 @@ export default function LocalSEO() {
                 set("longitude", e.target.value);
               }}
               className={`mt-1 block w-full rounded-md border px-3 py-2 text-sm ${
-                settings.longitude !== "" && !validateCoords(settings.latitude, settings.longitude)
+                settings.longitude !== "" &&
+                !validateCoords(settings.latitude, settings.longitude)
                   ? "border-red-500"
                   : "border-gray-300"
               }`}
               placeholder="24.7536"
             />
-            {settings.longitude !== "" && !validateCoords("", settings.longitude) && (
-              <p className="mt-1 text-xs text-red-500">
-                Must be a number between -180 and 180
-              </p>
-            )}
+            {settings.longitude !== "" &&
+              !validateCoords("", settings.longitude) && (
+                <p className="mt-1 text-xs text-red-500">
+                  Must be a number between -180 and 180
+                </p>
+              )}
           </div>
         </div>
 
@@ -637,9 +639,7 @@ export default function LocalSEO() {
         >
           Use My Current Location
         </button>
-        {geoError && (
-          <p className="text-xs text-amber-600">{geoError}</p>
-        )}
+        {geoError && <p className="text-xs text-amber-600">{geoError}</p>}
       </section>
 
       {/* Opening Hours */}
@@ -686,9 +686,7 @@ export default function LocalSEO() {
 
       {/* Holiday Overrides */}
       <section className="mt-8 space-y-4">
-        <h3 className="text-lg font-medium text-gray-800">
-          Holiday Overrides
-        </h3>
+        <h3 className="text-lg font-medium text-gray-800">Holiday Overrides</h3>
 
         <div className="space-y-2">
           {(settings.holiday_overrides || []).map((holiday, i) => (
@@ -749,15 +747,13 @@ export default function LocalSEO() {
           type="button"
           onClick={addHolidayOverride}
           disabled={
-            (settings.holiday_overrides || []).length >=
-            MAX_HOLIDAY_OVERRIDES
+            (settings.holiday_overrides || []).length >= MAX_HOLIDAY_OVERRIDES
           }
           className="rounded-md border border-gray-300 px-3 py-1.5 text-sm text-gray-700 hover:bg-gray-50 disabled:opacity-50"
         >
           Add Holiday Override
         </button>
-        {(settings.holiday_overrides || []).length >=
-          MAX_HOLIDAY_OVERRIDES && (
+        {(settings.holiday_overrides || []).length >= MAX_HOLIDAY_OVERRIDES && (
           <p className="text-xs text-amber-600">
             Maximum of {MAX_HOLIDAY_OVERRIDES} holiday overrides reached.
           </p>
@@ -806,7 +802,8 @@ export default function LocalSEO() {
           Entity URLs (sameAs)
         </h3>
         <p className="text-sm text-gray-500">
-          Links to authoritative entity pages (Wikipedia, Wikidata, Google Business, Facebook, LinkedIn, etc.).
+          Links to authoritative entity pages (Wikipedia, Wikidata, Google
+          Business, Facebook, LinkedIn, etc.).
         </p>
 
         <div className="space-y-2">

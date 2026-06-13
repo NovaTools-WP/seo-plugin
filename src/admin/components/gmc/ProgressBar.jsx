@@ -37,7 +37,9 @@ export default function ProgressBar({ syncActive, onStatusUpdate }) {
         <span className="font-medium text-gray-700">
           {state === "active" && "Syncing..."}
           {state === "paused" && "Sync Paused"}
-          {state === "complete" && errors > 0 && `Sync Complete with ${errors} error(s)`}
+          {state === "complete" &&
+            errors > 0 &&
+            `Sync Complete with ${errors} error(s)`}
           {state === "complete" && errors === 0 && "Sync Complete"}
           {state === "cancelled" && "Sync Cancelled"}
           {state === "idle" && "No sync in progress"}

@@ -1,6 +1,10 @@
 import React from "react";
 
-export default function ConnectionStatus({ connected, email, reconnectRequired }) {
+export default function ConnectionStatus({
+  connected,
+  email,
+  reconnectRequired,
+}) {
   if (reconnectRequired) {
     return (
       <span className="inline-flex items-center gap-1.5 rounded-full bg-yellow-100 px-3 py-1 text-xs font-medium text-yellow-800">

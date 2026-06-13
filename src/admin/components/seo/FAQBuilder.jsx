@@ -26,7 +26,10 @@ export default function FAQBuilder({ postId, initialFaq, container }) {
     if (index === 0) return;
     setFaq((prev) => {
       const updated = [...prev];
-      [updated[index - 1], updated[index]] = [updated[index], updated[index - 1]];
+      [updated[index - 1], updated[index]] = [
+        updated[index],
+        updated[index - 1],
+      ];
       return updated;
     });
   };
@@ -35,7 +38,10 @@ export default function FAQBuilder({ postId, initialFaq, container }) {
     if (index === faq.length - 1) return;
     setFaq((prev) => {
       const updated = [...prev];
-      [updated[index], updated[index + 1]] = [updated[index + 1], updated[index]];
+      [updated[index], updated[index + 1]] = [
+        updated[index + 1],
+        updated[index],
+      ];
       return updated;
     });
   };
@@ -47,7 +53,9 @@ export default function FAQBuilder({ postId, initialFaq, container }) {
     if (!form) return;
 
     // Remove old hidden inputs
-    form.querySelectorAll('input[name="_wseo_faq"]').forEach((el) => el.remove());
+    form
+      .querySelectorAll('input[name="_wseo_faq"]')
+      .forEach((el) => el.remove());
 
     if (faq.length > 0) {
       const hidden = document.createElement("input");
@@ -63,7 +71,9 @@ export default function FAQBuilder({ postId, initialFaq, container }) {
 
   return (
     <div className="rounded-md border border-gray-200 bg-white p-4">
-      <h3 className="mb-3 text-sm font-semibold text-gray-700">FAQ / Q&A (FAQPage Schema)</h3>
+      <h3 className="mb-3 text-sm font-semibold text-gray-700">
+        FAQ / Q&A (FAQPage Schema)
+      </h3>
 
       <div className="space-y-3">
         {faq.map((entry, i) => (

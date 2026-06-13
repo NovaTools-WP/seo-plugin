@@ -28,7 +28,8 @@ function PostTypeTab({ type, settings, set }) {
           }
         />
         <p className="mt-1 text-xs text-gray-400">
-          Tokens: %%title%%, %%sitename%%, %%sitedesc%%, %%sep%%, %%category%%, %%page%%
+          Tokens: %%title%%, %%sitename%%, %%sitedesc%%, %%sep%%, %%category%%,
+          %%page%%
         </p>
       </div>
       <div>
@@ -69,9 +70,7 @@ function PostTypeTab({ type, settings, set }) {
           }
           className="h-4 w-4 rounded border-gray-300"
         />
-        <label className="text-sm text-gray-700">
-          Include in sitemap
-        </label>
+        <label className="text-sm text-gray-700">Include in sitemap</label>
       </div>
     </div>
   );
@@ -144,7 +143,8 @@ export default function GeneralSettings() {
               placeholder="%%title%% %%sep%% %%sitename%%"
             />
             <p className="mt-1 text-xs text-gray-400">
-              Tokens: %%title%%, %%sitename%%, %%sitedesc%%, %%sep%%, %%category%%, %%page%%
+              Tokens: %%title%%, %%sitename%%, %%sitedesc%%, %%sep%%,
+              %%category%%, %%page%%
             </p>
           </div>
           <div>
@@ -184,9 +184,7 @@ export default function GeneralSettings() {
             </label>
             <textarea
               value={settings.wseo_robots_txt_content || ""}
-              onChange={(e) =>
-                set("wseo_robots_txt_content", e.target.value)
-              }
+              onChange={(e) => set("wseo_robots_txt_content", e.target.value)}
               className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 font-mono text-sm"
               rows={6}
               placeholder="User-agent: *&#10;Disallow: /wp-admin/"
@@ -206,7 +204,8 @@ export default function GeneralSettings() {
               placeholder="–"
             />
             <p className="mt-1 text-xs text-gray-400">
-              Separator used before "Page N" in meta titles on paginated archives.
+              Separator used before "Page N" in meta titles on paginated
+              archives.
             </p>
           </div>
         </Tabs.Content>
