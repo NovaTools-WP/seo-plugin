@@ -10,6 +10,7 @@ class ApiClient {
 
 	const MAX_RETRIES    = 3;
 	const BASE_DELAYS    = array( 30, 60, 120 );
+	const MAX_DELAY      = 30;
 
 	private $oauth;
 
@@ -59,8 +60,11 @@ class ApiClient {
 
 		for ( $attempt = 0; $attempt <= self::MAX_RETRIES; $attempt++ ) {
 			if ( $attempt > 0 ) {
-				$delay = self::BASE_DELAYS[ $attempt - 1 ] ?? 120;
+				$delay = min( self::BASE_DELAYS[ $attempt - 1 ] ?? 120, self::MAX_DELAY );
 				Logger::log( 'gmc_sync', "Retry attempt {$attempt}, waiting {$delay}s" );
+				if ( ! $this->can_sleep() ) {
+					return new \WP_Error( 'gmc_rate_limited', 'API rate limited. Retry later.' );
+				}
 				sleep( $delay );
 			}
 
@@ -95,8 +99,12 @@ class ApiClient {
 				}
 				$retry_after = (int) wp_remote_retrieve_header( $response, 'retry-after' );
 				if ( $retry_after > 0 ) {
-					Logger::log( 'gmc_sync', "Rate limited, Retry-After: {$retry_after}s" );
-					sleep( $retry_after );
+					$delay = min( $retry_after, self::MAX_DELAY );
+					Logger::log( 'gmc_sync', "Rate limited, Retry-After: {$retry_after}s (capped to {$delay}s)" );
+					if ( ! $this->can_sleep() ) {
+						return new \WP_Error( 'gmc_rate_limited', 'API rate limited. Retry later.' );
+					}
+					sleep( $delay );
 				}
 				continue;
 			}
@@ -114,5 +122,9 @@ class ApiClient {
 		}
 
 		return new \WP_Error( 'gmc_max_retries', 'Max retries exceeded.' );
+	}
+
+	private function can_sleep() {
+		return did_action( 'action_scheduler_queue_runner_running' ) > 0;
 	}
 }

@@ -7,6 +7,7 @@ use NovaToolsSEO\Admin\Settings;
 use NovaToolsSEO\Admin\YoastImport;
 use NovaToolsSEO\Core\MetaKeys;
 use NovaToolsSEO\Sitemaps\Generator;
+use NovaToolsSEO\Redirects\FourOhFourLogger;
 use NovaToolsSEO\Traits\Base;
 use NovaToolsSEO\WooCommerce\Filters\FilterParamsRepository;
 use NovaToolsSEO\WooCommerce\Taxonomy\TaxonomyNoindexRepository;
@@ -19,6 +20,28 @@ class Api {
 
 	public function init() {
 		add_action( 'rest_api_init', array( $this, 'register_routes' ) );
+		add_filter( 'rest_pre_dispatch', array( $this, 'verify_nonce_for_state_changes' ), 10, 3 );
+	}
+
+	public function verify_nonce_for_state_changes( $result, $server, $request ) {
+		if ( ! in_array( $request->get_method(), array( 'POST', 'PUT', 'DELETE', 'PATCH' ), true ) ) {
+			return $result;
+		}
+
+		if ( strpos( $request->get_route(), '/novatools-seo/' ) !== 0 ) {
+			return $result;
+		}
+
+		$nonce = $request->get_header( 'X-WP-Nonce' );
+		if ( ! $nonce || ! wp_verify_nonce( $nonce, 'wp_rest' ) ) {
+			return new \WP_Error(
+				'rest_forbidden',
+				__( 'Invalid or missing nonce.', 'novatools-seo' ),
+				array( 'status' => 403 )
+			);
+		}
+
+		return $result;
 	}
 
 	public function register_routes() {
@@ -141,6 +164,41 @@ class Api {
 					return current_user_can( 'manage_options' );
 				},
 			),
+		) );
+
+		register_rest_route( $namespace, '/404-logs', array(
+			array(
+				'methods'             => 'GET',
+				'callback'            => array( $this, 'get_404_logs' ),
+				'permission_callback' => function() {
+					return current_user_can( 'manage_options' );
+				},
+			),
+			array(
+				'methods'             => 'DELETE',
+				'callback'            => array( $this, 'clear_404_logs' ),
+				'permission_callback' => function() {
+					return current_user_can( 'manage_options' );
+				},
+			),
+		) );
+
+		register_rest_route( $namespace, '/404-logs/(?P<id>\d+)', array(
+			array(
+				'methods'             => 'DELETE',
+				'callback'            => array( $this, 'delete_404_log' ),
+				'permission_callback' => function() {
+					return current_user_can( 'manage_options' );
+				},
+			),
+		) );
+
+		register_rest_route( $namespace, '/404-suggestions', array(
+			'methods'             => 'GET',
+			'callback'            => array( $this, 'get_404_suggestions' ),
+			'permission_callback' => function() {
+				return current_user_can( 'manage_options' );
+			},
 		) );
 
 		register_rest_route( $namespace, '/export', array(
@@ -460,6 +518,8 @@ class Api {
 			}
 		}
 
+		$warning = $this->check_redirect_domain( $data['destination_url'] );
+
 		if ( ! empty( $params['id'] ) ) {
 			$wpdb->update( $table, $data, array( 'id' => absint( $params['id'] ) ) );
 		} else {
@@ -468,7 +528,12 @@ class Api {
 
 		wp_cache_delete( 'wseo_redirects', 'novatools-seo' );
 
-		return rest_ensure_response( array( 'success' => true ) );
+		$response = array( 'success' => true );
+		if ( $warning ) {
+			$response['warning'] = $warning;
+		}
+
+		return rest_ensure_response( $response );
 	}
 
 	public function delete_redirect( $request ) {
@@ -477,6 +542,51 @@ class Api {
 		$wpdb->delete( $table, array( 'id' => absint( $request['id'] ) ) );
 		wp_cache_delete( 'wseo_redirects', 'novatools-seo' );
 		return rest_ensure_response( array( 'success' => true ) );
+	}
+
+	public function get_404_logs( $request ) {
+		$limit  = absint( $request['limit'] ?? 100 );
+		$offset = absint( $request['offset'] ?? 0 );
+		$logs   = FourOhFourLogger::get_aggregated_logs( $limit, $offset );
+
+		$processed = array();
+		foreach ( $logs as $log ) {
+			$context = json_decode( $log['context'] ?? '{}', true );
+			$processed[] = array(
+				'id'        => (int) $log['id'],
+				'url'       => $log['url'],
+				'hit_count' => isset( $context['hit_count'] ) ? (int) $context['hit_count'] : 1,
+				'referer'   => $context['referer'] ?? '',
+				'user_ip'   => $context['user_ip'] ?? '',
+				'last_hit'  => $log['created_at'],
+			);
+		}
+
+		usort( $processed, function ( $a, $b ) {
+			return $b['hit_count'] - $a['hit_count'];
+		} );
+
+		return rest_ensure_response( $processed );
+	}
+
+	public function delete_404_log( $request ) {
+		FourOhFourLogger::delete_log( $request['id'] );
+		return rest_ensure_response( array( 'success' => true ) );
+	}
+
+	public function clear_404_logs() {
+		FourOhFourLogger::clear_all_logs();
+		return rest_ensure_response( array( 'success' => true ) );
+	}
+
+	public function get_404_suggestions( $request ) {
+		$url = sanitize_text_field( $request['url'] ?? '' );
+		if ( empty( $url ) ) {
+			return new \WP_Error( 'missing_url', 'URL parameter is required.', array( 'status' => 400 ) );
+		}
+
+		$suggestions = FourOhFourLogger::get_suggestions( $url );
+		return rest_ensure_response( $suggestions );
 	}
 
 	private function validate_redirect_regex( $pattern ) {
@@ -503,6 +613,42 @@ class Api {
 		}
 
 		return true;
+	}
+
+	private function check_redirect_domain( $destination ) {
+		if ( empty( $destination ) ) {
+			return null;
+		}
+
+		$host = wp_parse_url( $destination, PHP_URL_HOST );
+		if ( empty( $host ) ) {
+			return null;
+		}
+
+		$site_host = wp_parse_url( home_url(), PHP_URL_HOST );
+		if ( strtolower( $host ) === strtolower( $site_host ) ) {
+			return null;
+		}
+
+		$allowed_domains = get_option( 'wseo_redirect_allowed_domains', array() );
+
+		if ( ! empty( $allowed_domains ) && ! in_array( strtolower( $host ), array_map( 'strtolower', $allowed_domains ), true ) ) {
+			return sprintf(
+				/* translators: %s: domain name */
+				__( 'Domain "%s" is not in the allowed redirect domains list. This redirect will be blocked at runtime.', 'novatools-seo' ),
+				$host
+			);
+		}
+
+		if ( empty( $allowed_domains ) ) {
+			return sprintf(
+				/* translators: %s: domain name */
+				__( 'Redirecting to external domain "%s". Consider configuring an allowed domains list in settings.', 'novatools-seo' ),
+				$host
+			);
+		}
+
+		return null;
 	}
 
 	public function export_settings() {
@@ -625,7 +771,7 @@ class Api {
 
 		$redirect_count = 0;
 		$table = $wpdb->prefix . 'wseo_redirects';
-		if ( $wpdb->get_var( "SHOW TABLES LIKE '{$table}'" ) === $table ) {
+		if ( $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $table ) ) === $table ) {
 			$redirect_count = (int) $wpdb->get_var( "SELECT COUNT(*) FROM {$table}" );
 		}
 

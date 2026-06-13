@@ -2,6 +2,8 @@
 
 namespace NovaToolsSEO\Sitemaps;
 
+use NovaToolsSEO\Admin\Settings;
+use NovaToolsSEO\Core\Logger;
 use NovaToolsSEO\Traits\Base;
 use NovaToolsSEO\WooCommerce\Taxonomy\TaxonomyNoindexRepository;
 
@@ -39,15 +41,19 @@ class Generator {
 			return;
 		}
 
-		header( 'Content-Type: application/xml; charset=utf-8' );
+		$file = $this->get_sitemap_file_path( $sitemap );
 
-		if ( 'index' === $sitemap ) {
-			echo $this->get_index_xml();
-		} else {
-			echo $this->get_child_sitemap_xml( $sitemap );
+		if ( ! file_exists( $file ) ) {
+			$this->regenerate_sitemap_file( $sitemap );
 		}
 
-		exit;
+		if ( file_exists( $file ) ) {
+			header( 'Content-Type: application/xml; charset=utf-8' );
+			readfile( $file );
+			exit;
+		}
+
+		$this->serve_dynamic_sitemap( $sitemap );
 	}
 
 	public function rebuild_all() {
@@ -69,6 +75,8 @@ class Generator {
 		foreach ( $taxonomies as $taxonomy ) {
 			$this->build_taxonomy_sitemap( $sitemap_dir, $taxonomy );
 		}
+
+		$this->ping_search_engines();
 	}
 
 	public function schedule_rebuild( $id = 0 ) {
@@ -79,6 +87,54 @@ class Generator {
 
 	public function rebuild_manually() {
 		$this->rebuild_all();
+	}
+
+	private function get_sitemap_file_path( $sitemap ) {
+		$upload_dir = wp_upload_dir();
+		$sitemap_dir = $upload_dir['basedir'] . '/wseo-sitemaps';
+
+		if ( 'index' === $sitemap ) {
+			return $sitemap_dir . '/sitemap.xml';
+		}
+
+		return $sitemap_dir . '/sitemap-' . $sitemap . '.xml';
+	}
+
+	private function regenerate_sitemap_file( $sitemap ) {
+		$upload_dir = wp_upload_dir();
+		$sitemap_dir = $upload_dir['basedir'] . '/wseo-sitemaps';
+
+		if ( ! file_exists( $sitemap_dir ) ) {
+			wp_mkdir_p( $sitemap_dir );
+		}
+
+		if ( 'index' === $sitemap ) {
+			$this->build_index( $sitemap_dir );
+			return;
+		}
+
+		$post_types = $this->get_sitemap_post_types();
+		if ( in_array( $sitemap, $post_types, true ) ) {
+			$this->build_post_type_sitemap( $sitemap_dir, $sitemap );
+			return;
+		}
+
+		$taxonomies = $this->get_sitemap_taxonomies();
+		if ( in_array( $sitemap, $taxonomies, true ) ) {
+			$this->build_taxonomy_sitemap( $sitemap_dir, $sitemap );
+		}
+	}
+
+	private function serve_dynamic_sitemap( $sitemap ) {
+		header( 'Content-Type: application/xml; charset=utf-8' );
+
+		if ( 'index' === $sitemap ) {
+			echo $this->get_index_xml();
+		} else {
+			echo $this->get_child_sitemap_xml( $sitemap );
+		}
+
+		exit;
 	}
 
 	private function get_index_xml() {
@@ -368,5 +424,35 @@ class Generator {
 	private function build_taxonomy_sitemap( $dir, $taxonomy ) {
 		$xml = $this->get_child_sitemap_xml( $taxonomy );
 		file_put_contents( $dir . '/sitemap-' . $taxonomy . '.xml', $xml );
+	}
+
+	private function ping_search_engines() {
+		$settings = Settings::get_instance();
+		if ( $settings->get( 'sitemap_ping_enabled', '1' ) !== '1' ) {
+			return;
+		}
+
+		$sitemap_url = home_url( '/sitemap.xml' );
+		$pings = array(
+			'https://www.google.com/ping?sitemap=' . urlencode( $sitemap_url ),
+			'https://www.bing.com/indexnow?url=' . urlencode( home_url( '/' ) ) . '&sitemap=' . urlencode( $sitemap_url ),
+		);
+
+		foreach ( $pings as $ping_url ) {
+			$response = wp_remote_get( $ping_url, array(
+				'timeout'  => 5,
+				'blocking' => false,
+			) );
+
+			if ( is_wp_error( $response ) ) {
+				Logger::log( 'sitemap_ping', 'Ping failed: ' . $ping_url, array(
+					'error' => $response->get_error_message(),
+				) );
+			}
+		}
+
+		Logger::log( 'sitemap_ping', 'Search engines pinged', array(
+			'sitemap_url' => $sitemap_url,
+		) );
 	}
 }

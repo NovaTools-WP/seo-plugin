@@ -18,6 +18,7 @@
 
 use NovaToolsSEO\Core\Install;
 use NovaToolsSEO\Core\DependencyCheck;
+use NovaToolsSEO\Database\Migrations\Redirects;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -32,6 +33,19 @@ function novatools_seo_activate() {
 	Install::get_instance()->init();
 }
 register_activation_hook( __FILE__, 'novatools_seo_activate' );
+
+/**
+ * Run schema migrations on update without reactivation.
+ */
+add_action( 'plugins_loaded', function() {
+	if ( ! DependencyCheck::is_novatools_active() ) {
+		return;
+	}
+	$installed_version = get_option( Redirects::DB_VERSION_OPTION, '1.0.0' );
+	if ( version_compare( $installed_version, Redirects::DB_VERSION, '<' ) ) {
+		Redirects::migrate();
+	}
+}, 5 );
 
 /**
  * Initializes the NovaTools SEO add-on when plugins are loaded.

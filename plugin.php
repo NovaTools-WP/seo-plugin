@@ -8,12 +8,14 @@ use NovaToolsSEO\Admin\MetaBox;
 use NovaToolsSEO\Admin\Settings;
 use NovaToolsSEO\Assets\Admin;
 use NovaToolsSEO\Core\Api;
+use NovaToolsSEO\Core\Logger;
 use NovaToolsSEO\Frontend\Breadcrumbs;
 use NovaToolsSEO\Frontend\HeadOutput;
 use NovaToolsSEO\Frontend\IndexNow;
 use NovaToolsSEO\Frontend\RobotsTxt;
 use NovaToolsSEO\Frontend\Schema;
 use NovaToolsSEO\Frontend\ProductSchema;
+use NovaToolsSEO\Redirects\FourOhFourLogger;
 use NovaToolsSEO\Redirects\Manager as RedirectManager;
 use NovaToolsSEO\Sitemaps\Generator;
 use NovaToolsSEO\Sitemaps\StockTracker;
@@ -44,8 +46,6 @@ final class NovaToolsSEO {
 			ContentListSeoColumn::get_instance()->init();
 		}
 
-		HeadOutput::get_instance()->init();
-
 		if ( class_exists( 'WooCommerce' ) ) {
 			\NovaToolsSEO\WooCommerce\ProductOG::get_instance()->init();
 			\NovaToolsSEO\WooCommerce\PinterestNamespace::get_instance()->init();
@@ -60,18 +60,23 @@ final class NovaToolsSEO {
 		}
 
 		BrandSameAs::get_instance()->init();
-		Schema::get_instance()->init();
 		IndexNow::get_instance()->init();
-		RobotsTxt::get_instance()->init();
-		Breadcrumbs::get_instance()->init();
 		RedirectManager::get_instance()->init();
+		FourOhFourLogger::get_instance()->init();
 		Api::get_instance()->init();
 		GMCRestController::get_instance()->init();
-		Generator::get_instance()->init();
 		StockTracker::get_instance()->init();
 		Settings::get_instance()->init();
 
+		if ( ! is_admin() ) {
+			HeadOutput::get_instance()->init();
+			Schema::get_instance()->init();
+			RobotsTxt::get_instance()->init();
+			Breadcrumbs::get_instance()->init();
+			Generator::get_instance()->init();
+		}
 		add_action( 'init', array( $this, 'i18n' ) );
+		add_action( 'wseo_logs_cleanup', array( Logger::class, 'cleanup' ) );
 	}
 
 	public function i18n() {

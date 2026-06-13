@@ -145,11 +145,11 @@ class RestController {
 			if ( ! empty( $merchant_id ) && ! is_numeric( $merchant_id ) ) {
 				return new \WP_Error( 'gmc_invalid_merchant_id', 'Merchant Center Account ID must be numeric.', array( 'status' => 400 ) );
 			}
-			update_option( 'wseo_gmc_merchant_id', $merchant_id );
+			update_option( 'wseo_gmc_merchant_id', $merchant_id, 'no' );
 		}
 
 		if ( isset( $params['realtime_sync'] ) ) {
-			update_option( 'wseo_gmc_realtime_sync', $params['realtime_sync'] ? '1' : '0' );
+			update_option( 'wseo_gmc_realtime_sync', $params['realtime_sync'] ? '1' : '0', 'no' );
 		}
 
 		if ( isset( $params['sync_schedule'] ) ) {
@@ -157,11 +157,11 @@ class RestController {
 		}
 
 		if ( isset( $params['client_id'] ) ) {
-			update_option( OAuth::OPTION_CLIENT_ID, sanitize_text_field( $params['client_id'] ) );
+			update_option( OAuth::OPTION_CLIENT_ID, sanitize_text_field( $params['client_id'] ), 'no' );
 		}
 
 		if ( isset( $params['client_secret'] ) && ! empty( $params['client_secret'] ) ) {
-			update_option( OAuth::OPTION_CLIENT_SECRET, Crypto::encrypt( $params['client_secret'] ) );
+			update_option( OAuth::OPTION_CLIENT_SECRET, Crypto::encrypt( $params['client_secret'] ), 'no' );
 		}
 
 		return rest_ensure_response( array( 'success' => true ) );
@@ -173,7 +173,7 @@ class RestController {
 			$schedule = 'disabled';
 		}
 
-		update_option( 'wseo_gmc_sync_schedule', $schedule );
+		update_option( 'wseo_gmc_sync_schedule', $schedule, 'no' );
 		$this->sync_engine->update_recurring_schedule( $schedule );
 	}
 

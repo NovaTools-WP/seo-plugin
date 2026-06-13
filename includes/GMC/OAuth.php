@@ -37,6 +37,9 @@ class OAuth {
 			return '';
 		}
 
+		$state = wp_generate_password( 32, false );
+		set_transient( 'wseo_gmc_oauth_state_' . $state, true, 5 * MINUTE_IN_SECONDS );
+
 		$redirect_uri = rest_url( 'novatools-seo/v1/gmc/callback' );
 		$params       = array(
 			'client_id'             => $client_id,
@@ -45,6 +48,7 @@ class OAuth {
 			'scope'                 => implode( ' ', self::SCOPES ),
 			'access_type'           => 'offline',
 			'prompt'                => 'consent',
+			'state'                 => $state,
 		);
 
 		return 'https://accounts.google.com/o/oauth2/v2/auth?' . http_build_query( $params );
@@ -53,8 +57,17 @@ class OAuth {
 	public function handle_callback( $request ) {
 		$code  = $request->get_param( 'code' );
 		$error = $request->get_param( 'error' );
+		$state = $request->get_param( 'state' );
 
 		$admin_url = admin_url( 'admin.php?page=novatools-seo#/integrations' );
+
+		if ( ! $state || ! get_transient( 'wseo_gmc_oauth_state_' . $state ) ) {
+			Logger::log( 'gmc_auth', 'OAuth callback failed: invalid state parameter' );
+			wp_redirect( $admin_url . '?gmc=error' );
+			exit;
+		}
+
+		delete_transient( 'wseo_gmc_oauth_state_' . $state );
 
 		if ( ! empty( $error ) || empty( $code ) ) {
 			Logger::log( 'gmc_auth', 'OAuth callback failed: ' . ( $error ?? 'no code' ) );
@@ -106,15 +119,15 @@ class OAuth {
 
 	public function store_tokens( $token_data ) {
 		if ( ! empty( $token_data['refresh_token'] ) ) {
-			update_option( self::OPTION_REFRESH_TOKEN, Crypto::encrypt( $token_data['refresh_token'] ) );
+			update_option( self::OPTION_REFRESH_TOKEN, Crypto::encrypt( $token_data['refresh_token'] ), 'no' );
 		}
 
 		if ( ! empty( $token_data['access_token'] ) ) {
-			update_option( self::OPTION_ACCESS_TOKEN, Crypto::encrypt( $token_data['access_token'] ) );
+			update_option( self::OPTION_ACCESS_TOKEN, Crypto::encrypt( $token_data['access_token'] ), 'no' );
 		}
 
 		if ( ! empty( $token_data['expires_in'] ) ) {
-			update_option( self::OPTION_TOKEN_EXPIRES, time() + (int) $token_data['expires_in'] );
+			update_option( self::OPTION_TOKEN_EXPIRES, time() + (int) $token_data['expires_in'], 'no' );
 		}
 
 		$this->fetch_account_email( $token_data['access_token'] ?? '' );
@@ -129,7 +142,7 @@ class OAuth {
 		if ( ! is_wp_error( $response ) ) {
 			$body = json_decode( wp_remote_retrieve_body( $response ), true );
 			if ( ! empty( $body['email'] ) ) {
-				update_option( self::OPTION_ACCOUNT_EMAIL, sanitize_email( $body['email'] ) );
+				update_option( self::OPTION_ACCOUNT_EMAIL, sanitize_email( $body['email'] ), 'no' );
 			}
 		}
 	}
@@ -166,7 +179,7 @@ class OAuth {
 		$refresh   = Crypto::decrypt( $encrypted );
 
 		if ( empty( $refresh ) ) {
-			update_option( self::OPTION_TOKEN_REVOKED, '1' );
+			update_option( self::OPTION_TOKEN_REVOKED, '1', 'no' );
 			return false;
 		}
 
@@ -184,7 +197,7 @@ class OAuth {
 
 		if ( is_wp_error( $response ) ) {
 			Logger::log( 'gmc_error', 'Token refresh failed: ' . $response->get_error_message() );
-			update_option( self::OPTION_TOKEN_REVOKED, '1' );
+			update_option( self::OPTION_TOKEN_REVOKED, '1', 'no' );
 			return false;
 		}
 
@@ -192,13 +205,13 @@ class OAuth {
 
 		if ( ! empty( $body['error'] ) ) {
 			Logger::log( 'gmc_error', 'Token refresh error: ' . wp_json_encode( $body ) );
-			update_option( self::OPTION_TOKEN_REVOKED, '1' );
+			update_option( self::OPTION_TOKEN_REVOKED, '1', 'no' );
 			return false;
 		}
 
 		if ( ! empty( $body['access_token'] ) ) {
-			update_option( self::OPTION_ACCESS_TOKEN, Crypto::encrypt( $body['access_token'] ) );
-			update_option( self::OPTION_TOKEN_EXPIRES, time() + (int) ( $body['expires_in'] ?? 3600 ) );
+			update_option( self::OPTION_ACCESS_TOKEN, Crypto::encrypt( $body['access_token'] ), 'no' );
+			update_option( self::OPTION_TOKEN_EXPIRES, time() + (int) ( $body['expires_in'] ?? 3600 ), 'no' );
 			return $body['access_token'];
 		}
 

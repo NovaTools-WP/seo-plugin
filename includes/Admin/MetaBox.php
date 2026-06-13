@@ -3,6 +3,7 @@
 namespace NovaToolsSEO\Admin;
 
 use NovaToolsSEO\Traits\Base;
+use NovaToolsSEO\Core\MetaKeys;
 use NovaToolsSEO\Core\DependencyCheck;
 use NovaToolsSEO\Libs\Assets;
 use NovaToolsSEO\Assets\Admin as AssetsAdmin;
@@ -86,9 +87,7 @@ class MetaBox {
 			return;
 		}
 
-		$fields = array( '_wseo_title', '_wseo_description', '_wseo_canonical', '_wseo_robots', '_wseo_og_title', '_wseo_og_description', '_wseo_og_image', '_wseo_twitter_card', '_wseo_twitter_title', '_wseo_twitter_description', '_wseo_twitter_image', '_wseo_local_business' );
-
-		foreach ( $fields as $field ) {
+		foreach ( MetaKeys::POST_ALL as $field ) {
 			if ( isset( $_POST[ $field ] ) ) {
 				update_post_meta( $post_id, $field, sanitize_text_field( $_POST[ $field ] ) );
 			}
@@ -104,9 +103,7 @@ class MetaBox {
 			return;
 		}
 
-		$fields = array( '_wseo_title', '_wseo_description', '_wseo_robots' );
-
-		foreach ( $fields as $field ) {
+		foreach ( MetaKeys::TERM_SEO as $field ) {
 			if ( isset( $_POST[ $field ] ) ) {
 				update_term_meta( $term_id, $field, sanitize_text_field( $_POST[ $field ] ) );
 			}
@@ -151,7 +148,7 @@ class MetaBox {
 	}
 
 	private function get_post_seo_data( $post_id ) {
-		$keys = array( '_wseo_title', '_wseo_description', '_wseo_canonical', '_wseo_robots', '_wseo_og_title', '_wseo_og_description', '_wseo_og_image', '_wseo_twitter_card', '_wseo_twitter_title', '_wseo_twitter_description', '_wseo_twitter_image', '_wseo_local_business', '_thumbnail_id' );
+		$keys = array_merge( MetaKeys::POST_ALL, [ '_thumbnail_id' ] );
 
 		$data = array();
 		foreach ( $keys as $key ) {
@@ -168,7 +165,7 @@ class MetaBox {
 	}
 
 	private function get_term_seo_data( $term_id ) {
-		$keys = array( '_wseo_title', '_wseo_description', '_wseo_robots' );
+		$keys = MetaKeys::TERM_SEO;
 
 		$data = array();
 		foreach ( $keys as $key ) {

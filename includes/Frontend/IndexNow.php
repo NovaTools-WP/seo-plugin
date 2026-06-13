@@ -3,6 +3,7 @@
 namespace NovaToolsSEO\Frontend;
 
 use NovaToolsSEO\Admin\Settings;
+use NovaToolsSEO\Core\Logger;
 use NovaToolsSEO\Traits\Base;
 
 defined( 'ABSPATH' ) || exit;
@@ -133,14 +134,6 @@ class IndexNow {
 	}
 
 	private function log( $message, $context = array() ) {
-		global $wpdb;
-
-		$table = $wpdb->prefix . 'wseo_logs';
-
-		$wpdb->insert( $table, array(
-			'type'    => 'indexnow',
-			'message' => $message,
-			'context' => wp_json_encode( $context ),
-		) );
+		Logger::log( 'indexnow', $message, $context );
 	}
 }

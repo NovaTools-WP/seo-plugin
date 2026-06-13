@@ -2,6 +2,8 @@
 
 namespace NovaToolsSEO\Redirects;
 
+use NovaToolsSEO\Core\Logger;
+use NovaToolsSEO\Database\Migrations\Redirects;
 use NovaToolsSEO\Traits\Base;
 
 defined( 'ABSPATH' ) || exit;
@@ -11,7 +13,15 @@ class Manager {
 	use Base;
 
 	public function init() {
+		$this->maybe_run_schema_migration();
 		$this->check_redirects();
+	}
+
+	private function maybe_run_schema_migration() {
+		$installed_version = get_option( Redirects::DB_VERSION_OPTION, '1.0.0' );
+		if ( version_compare( $installed_version, Redirects::DB_VERSION, '<' ) ) {
+			Redirects::migrate();
+		}
 	}
 
 	public function check_redirects() {
@@ -50,9 +60,26 @@ class Manager {
 			$matched = false;
 
 			if ( $redirect->is_regex ) {
-				if ( @preg_match( $redirect->source_url, $request_uri ) ) {
+				$result = preg_match( $redirect->source_url, $request_uri );
+				if ( false === $result ) {
+					Logger::log( 'warning', 'Invalid redirect regex pattern.', array(
+						'redirect_id' => (int) $redirect->id,
+						'pattern'     => $redirect->source_url,
+						'error_code'  => preg_last_error(),
+					) );
+					continue;
+				}
+				if ( $result ) {
 					$matched = true;
-					$destination = @preg_replace( $redirect->source_url, $redirect->destination_url, $request_uri );
+					$destination = preg_replace( $redirect->source_url, $redirect->destination_url, $request_uri );
+					if ( null === $destination ) {
+						Logger::log( 'warning', 'Regex replace failed for redirect.', array(
+							'redirect_id' => (int) $redirect->id,
+							'pattern'     => $redirect->source_url,
+							'error_code'  => preg_last_error(),
+						) );
+						continue;
+					}
 				}
 			} else {
 				if ( trailingslashit( $request_uri ) === trailingslashit( $redirect->source_url ) ) {
@@ -62,6 +89,27 @@ class Manager {
 			}
 
 			if ( $matched && ! empty( $destination ) ) {
+				$site_host      = wp_parse_url( home_url(), PHP_URL_HOST );
+				$dest_host      = wp_parse_url( $destination, PHP_URL_HOST );
+				$is_same_domain = $dest_host && strtolower( $dest_host ) === strtolower( $site_host );
+
+				if ( ! $is_same_domain ) {
+					$stored_domains = get_option( 'wseo_redirect_allowed_domains', array() );
+					$allowed_domains = apply_filters( 'wseo_allowed_redirect_domains', $stored_domains );
+
+					if ( ! empty( $allowed_domains ) ) {
+						$allowed_lower = array_map( 'strtolower', $allowed_domains );
+						if ( ! in_array( strtolower( $dest_host ), $allowed_lower, true ) ) {
+							Logger::log( 'warning', 'Redirect blocked by domain allowlist.', array(
+								'redirect_id' => (int) $redirect->id,
+								'destination' => $destination,
+								'host'        => $dest_host,
+							) );
+							continue;
+						}
+					}
+				}
+
 				$status_code = (int) $redirect->status_code;
 				if ( ! in_array( $status_code, array( 301, 302, 303, 307, 308 ), true ) ) {
 					$status_code = 301;

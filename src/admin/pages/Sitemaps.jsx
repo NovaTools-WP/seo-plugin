@@ -4,6 +4,7 @@ import * as api from "../api";
 
 export default function Sitemaps() {
   const [enabled, setEnabled] = useState(true);
+  const [pingEnabled, setPingEnabled] = useState(true);
   const [threshold, setThreshold] = useState(30);
   const [rebuilding, setRebuilding] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -14,6 +15,7 @@ export default function Sitemaps() {
   useEffect(() => {
     api.get("/settings").then((s) => {
       setEnabled(s.wseo_sitemap_enabled !== "0");
+      setPingEnabled(s.wseo_sitemap_ping_enabled !== "0");
       if (s.wseo_outofstock_threshold !== undefined) {
         setThreshold(parseInt(s.wseo_outofstock_threshold, 10) || 0);
       }
@@ -29,6 +31,23 @@ export default function Sitemaps() {
         wseo_sitemap_enabled: checked ? "1" : "0",
       });
       setMessage("Sitemap " + (checked ? "enabled" : "disabled") + ".");
+    } catch {
+      setMessage("Error updating setting.");
+    }
+    setSaving(false);
+  }
+
+  async function togglePingEnabled(checked) {
+    setPingEnabled(checked);
+    setSaving(true);
+    setMessage("");
+    try {
+      await api.post("/settings", {
+        wseo_sitemap_ping_enabled: checked ? "1" : "0",
+      });
+      setMessage(
+        "Search engine ping " + (checked ? "enabled" : "disabled") + ".",
+      );
     } catch {
       setMessage("Error updating setting.");
     }
@@ -83,6 +102,24 @@ export default function Sitemaps() {
           <Switch.Root
             checked={enabled}
             onCheckedChange={toggleEnabled}
+            className="relative h-6 w-11 rounded-full bg-gray-200 data-[state=checked]:bg-blue-600"
+          >
+            <Switch.Thumb className="block h-5 w-5 translate-x-0.5 rounded-full bg-white shadow transition-transform data-[state=checked]:translate-x-[22px]" />
+          </Switch.Root>
+        </div>
+
+        <div className="flex items-center justify-between rounded-lg border border-gray-200 bg-white p-4">
+          <div>
+            <p className="text-sm font-medium text-gray-900">
+              Ping Search Engines
+            </p>
+            <p className="text-xs text-gray-500">
+              Notify Google and Bing when sitemaps are rebuilt
+            </p>
+          </div>
+          <Switch.Root
+            checked={pingEnabled}
+            onCheckedChange={togglePingEnabled}
             className="relative h-6 w-11 rounded-full bg-gray-200 data-[state=checked]:bg-blue-600"
           >
             <Switch.Thumb className="block h-5 w-5 translate-x-0.5 rounded-full bg-white shadow transition-transform data-[state=checked]:translate-x-[22px]" />

@@ -98,7 +98,7 @@ class SyncEngine {
 			'current_page' => 0,
 		);
 
-		update_option( self::OPTION_SYNC_STATE, $state );
+		update_option( self::OPTION_SYNC_STATE, $state, 'no' );
 
 		$this->schedule_batch_chunk( 1, $merchant_id );
 
@@ -164,7 +164,7 @@ class SyncEngine {
 			$this->schedule_batch_chunk( $page + 1, $merchant_id );
 		}
 
-		update_option( self::OPTION_SYNC_STATE, $state );
+		update_option( self::OPTION_SYNC_STATE, $state, 'no' );
 	}
 
 	public function cancel_sync() {
@@ -173,7 +173,7 @@ class SyncEngine {
 		if ( ! empty( $state ) && in_array( $state['status'] ?? '', array( 'active', 'paused' ), true ) ) {
 			$state['status'] = 'cancelled';
 			$state['cancelled_at'] = current_time( 'mysql' );
-			update_option( self::OPTION_SYNC_STATE, $state );
+			update_option( self::OPTION_SYNC_STATE, $state, 'no' );
 		}
 
 		if ( function_exists( 'as_unschedule_all_actions' ) ) {
@@ -187,7 +187,7 @@ class SyncEngine {
 		if ( ! empty( $state ) && 'active' === ( $state['status'] ?? '' ) ) {
 			$state['status'] = 'paused';
 			$state['paused_at'] = current_time( 'mysql' );
-			update_option( self::OPTION_SYNC_STATE, $state );
+			update_option( self::OPTION_SYNC_STATE, $state, 'no' );
 
 			if ( function_exists( 'as_unschedule_all_actions' ) ) {
 				as_unschedule_all_actions( self::ACTION_BATCH_CHUNK );
@@ -201,7 +201,7 @@ class SyncEngine {
 		if ( ! empty( $state ) && 'paused' === ( $state['status'] ?? '' ) ) {
 			$state['status'] = 'active';
 			unset( $state['paused_at'] );
-			update_option( self::OPTION_SYNC_STATE, $state );
+			update_option( self::OPTION_SYNC_STATE, $state, 'no' );
 
 			$this->schedule_batch_chunk( $state['current_page'] + 1, $state['merchant_id'] );
 		}

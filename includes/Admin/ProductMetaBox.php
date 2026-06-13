@@ -3,6 +3,7 @@
 namespace NovaToolsSEO\Admin;
 
 use NovaToolsSEO\Traits\Base;
+use NovaToolsSEO\Core\MetaKeys;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -129,7 +130,7 @@ class ProductMetaBox {
 	}
 
 	private function get_product_seo_data( $post_id ) {
-		$keys = array( '_wseo_gtin', '_wseo_mpn', '_wseo_isbn', '_wseo_brand', '_wseo_item_condition', '_wseo_primary_category', '_wseo_faq', '_wseo_local_inventory' );
+		$keys = array_merge( MetaKeys::PRODUCT, [ '_wseo_primary_category' ] );
 
 		$data = array();
 		foreach ( $keys as $key ) {

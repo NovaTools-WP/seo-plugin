@@ -3,6 +3,7 @@
 namespace NovaToolsSEO\Frontend;
 
 use NovaToolsSEO\Admin\Settings;
+use NovaToolsSEO\Core\MetaKeys;
 use NovaToolsSEO\Core\Tokens;
 use NovaToolsSEO\Traits\Base;
 use NovaToolsSEO\WooCommerce\ProductOG;
@@ -44,7 +45,7 @@ class HeadOutput {
 		}
 
 		$post_id = get_queried_object_id();
-		$keys = array( '_wseo_title', '_wseo_description', '_wseo_canonical', '_wseo_robots', '_wseo_og_title', '_wseo_og_description', '_wseo_og_image', '_wseo_twitter_card', '_wseo_twitter_title', '_wseo_twitter_description', '_wseo_twitter_image' );
+		$keys = MetaKeys::POST_SEO;
 
 		$data = array();
 		foreach ( $keys as $key ) {
@@ -66,7 +67,7 @@ class HeadOutput {
 		}
 
 		$term_id = get_queried_object_id();
-		$keys = array( '_wseo_title', '_wseo_description', '_wseo_robots' );
+		$keys = MetaKeys::TERM_SEO;
 
 		$data = array();
 		foreach ( $keys as $key ) {

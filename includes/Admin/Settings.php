@@ -54,6 +54,7 @@ class Settings {
 			'wseo_social_twitter_site'       => '',
 			'wseo_social_pinterest_rich_pins' => '1',
 			'wseo_sitemap_enabled'           => '1',
+			'wseo_sitemap_ping_enabled'      => '1',
 			'wseo_outofstock_threshold'      => '30',
 			'wseo_robots_txt_content'        => '',
 			'wseo_license_key'               => '',
@@ -74,6 +75,7 @@ class Settings {
 				'landmarks'            => array(),
 			),
 			'wseo_page_suffix_separator'     => '–',
+			'wseo_redirect_allowed_domains'  => array(),
 		);
 	}
 
@@ -116,6 +118,7 @@ class Settings {
 			case 'wseo_social_twitter_site':
 			case 'wseo_social_pinterest_rich_pins':
 			case 'wseo_sitemap_enabled':
+			case 'wseo_sitemap_ping_enabled':
 			case 'wseo_license_key':
 			case 'wseo_indexnow_enabled':
 			case 'wseo_indexnow_api_key':
@@ -130,6 +133,21 @@ class Settings {
 
 			case 'wseo_robots_txt_content':
 				return sanitize_textarea_field( $value );
+
+			case 'wseo_redirect_allowed_domains':
+				if ( ! is_array( $value ) ) {
+					return array();
+				}
+				$domains = array();
+				foreach ( $value as $domain ) {
+					$domain = strtolower( sanitize_text_field( $domain ) );
+					$domain = preg_replace( '#^https?://#', '', $domain );
+					$domain = rtrim( $domain, '/' );
+					if ( ! empty( $domain ) ) {
+						$domains[] = $domain;
+					}
+				}
+				return array_values( array_unique( $domains ) );
 
 			case 'wseo_ai_bot_rules':
 				if ( ! is_array( $value ) ) {

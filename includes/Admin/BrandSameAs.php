@@ -18,6 +18,22 @@ class BrandSameAs {
 			add_action( "edited_{$taxonomy}", array( $this, 'save' ) );
 			add_action( "created_{$taxonomy}", array( $this, 'save' ) );
 		}
+
+		add_action( 'admin_enqueue_scripts', array( $this, 'enqueue_scripts' ) );
+	}
+
+	public function enqueue_scripts( $hook ) {
+		if ( 'term.php' !== $hook ) {
+			return;
+		}
+
+		wp_enqueue_script(
+			'wseo-brand-sameas',
+			plugin_dir_url( dirname( __DIR__, 2 ) ) . 'assets/admin/js/brand-sameas.js',
+			array(),
+			NOVATOOLS_SEO_VERSION,
+			true
+		);
 	}
 
 	private function get_brand_taxonomies() {
@@ -52,24 +68,6 @@ class BrandSameAs {
 				</div>
 				<button type="button" class="button" id="wseo-sameas-add"><?php esc_html_e( '+ Add URL', 'novatools-seo' ); ?></button>
 				<p class="description"><?php esc_html_e( 'Links to authoritative entity pages (Wikipedia, Wikidata, Google Business, Facebook, LinkedIn, etc.).', 'novatools-seo' ); ?></p>
-				<script>
-				(function(){
-					var container = document.getElementById('wseo-sameas-rows');
-					var addBtn = document.getElementById('wseo-sameas-add');
-					addBtn.addEventListener('click', function(){
-						var row = document.createElement('div');
-						row.className = 'wseo-sameas-row';
-						row.style.cssText = 'display:flex;gap:4px;margin-bottom:4px;';
-						row.innerHTML = '<input type="url" name="_wseo_sameas[]" class="regular-text" style="flex:1;" placeholder="https://..." /><button type="button" class="button wseo-sameas-remove" style="color:#a00;">&times;</button>';
-						container.appendChild(row);
-					});
-					container.addEventListener('click', function(e){
-						if(e.target.classList.contains('wseo-sameas-remove')){
-							e.target.parentElement.remove();
-						}
-					});
-				})();
-				</script>
 			</td>
 		</tr>
 		<?php

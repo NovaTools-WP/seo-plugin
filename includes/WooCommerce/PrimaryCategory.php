@@ -67,14 +67,11 @@ class PrimaryCategory {
 
 		global $wpdb;
 		// Clear primary category for all products that used this term
-		$wpdb->delete(
-			$wpdb->postmeta,
-			array(
-				'meta_key'   => '_wseo_primary_category',
-				'meta_value' => $term_id,
-			),
-			array( '%s', '%s' )
-		);
+		$wpdb->query( $wpdb->prepare(
+			"DELETE FROM {$wpdb->postmeta} WHERE meta_key = %s AND meta_value = %d",
+			'_wseo_primary_category',
+			$term_id
+		) );
 	}
 
 	public function filter_product_permalink( $permalink, $post ) {
@@ -173,7 +170,7 @@ class PrimaryCategory {
 		$table = $wpdb->prefix . 'wseo_redirects';
 
 		// Check if table exists
-		if ( $wpdb->get_var( "SHOW TABLES LIKE '{$table}'" ) !== $table ) {
+		if ( $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $table ) ) !== $table ) {
 			return;
 		}
 
@@ -205,11 +202,11 @@ class PrimaryCategory {
 			) );
 
 			if ( class_exists( Logger::class ) ) {
-				Logger::get_instance()->log( 'info', sprintf(
-					'Primary category redirect cleanup: removed %d old redirect(s) for destination %s',
-					$deleted,
-					$destination
-				) );
+			Logger::log( 'info', sprintf(
+				'Primary category redirect cleanup: removed %d old redirect(s) for destination %s',
+				$deleted,
+				$destination
+			) );
 			}
 		}
 

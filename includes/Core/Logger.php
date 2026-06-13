@@ -8,7 +8,7 @@ class Logger {
 
 	public static function log( $type, $message, $context = null ) {
 		global $wpdb;
-		$table = $wpdb->prefix . 'wseo_logs';
+		$table = self::table_name();
 
 		$data = array(
 			'type'    => sanitize_text_field( $type ),
@@ -24,7 +24,7 @@ class Logger {
 
 	public static function get_logs( $type = '', $limit = 200, $offset = 0 ) {
 		global $wpdb;
-		$table = $wpdb->prefix . 'wseo_logs';
+		$table = self::table_name();
 
 		if ( ! empty( $type ) ) {
 			return $wpdb->get_results(
@@ -60,13 +60,43 @@ class Logger {
 			$csv .= sprintf(
 				"%s,%s,%s,%s,%s\n",
 				$log['id'],
-				$log['created_at'],
-				$log['type'],
-				str_replace( '"', '""', $log['message'] ),
-				str_replace( '"', '""', $log['context'] ?? '' )
+				self::escape_csv_cell( $log['created_at'] ),
+				self::escape_csv_cell( $log['type'] ),
+				self::escape_csv_cell( $log['message'] ),
+				self::escape_csv_cell( $log['context'] ?? '' )
 			);
 		}
 
 		return $csv;
+	}
+
+	public static function table_name() {
+		global $wpdb;
+		return $wpdb->prefix . 'wseo_logs';
+	}
+
+	public static function cleanup( $days = null ) {
+		if ( $days === null ) {
+			$days = (int) get_option( 'wseo_log_retention_days', 30 );
+		}
+
+		if ( $days < 1 ) {
+			return;
+		}
+
+		global $wpdb;
+		$table = self::table_name();
+		$wpdb->query( $wpdb->prepare(
+			"DELETE FROM `{$table}` WHERE created_at < DATE_SUB(NOW(), INTERVAL %d DAY)",
+			$days
+		) );
+	}
+
+	private static function escape_csv_cell( $value ) {
+		$value = str_replace( '"', '""', $value );
+		if ( strlen( $value ) > 0 && in_array( $value[0], [ '=', '+', '-', '@', "\t" ], true ) ) {
+			$value = "\t" . $value;
+		}
+		return $value;
 	}
 }
