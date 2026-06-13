@@ -358,30 +358,23 @@ class ProductSchema {
 	}
 
 	private function get_product_reviews( $product_id ) {
-		$args = array(
-			'post_id' => $product_id,
-			'status'  => 'approve',
-			'type'    => 'review',
-		);
+		global $wpdb;
 
-		$reviews = get_comments( $args );
-		$count = count( $reviews );
+		$stats = $wpdb->get_row( $wpdb->prepare(
+			"SELECT COUNT(*) as review_count, AVG(CAST(m.meta_value AS UNSIGNED)) as avg_rating
+			 FROM {$wpdb->comments} c
+			 INNER JOIN {$wpdb->commentmeta} m ON c.comment_ID = m.comment_ID AND m.meta_key = 'rating'
+			 WHERE c.comment_post_ID = %d AND c.comment_approved = '1' AND c.comment_type = 'review'",
+			$product_id
+		) );
 
-		if ( 0 === $count ) {
+		if ( ! $stats || 0 === (int) $stats->review_count ) {
 			return array( 'average' => 0, 'count' => 0 );
 		}
 
-		update_meta_cache( 'comment', wp_list_pluck( $reviews, 'comment_ID' ) );
-
-		$total = 0;
-		foreach ( $reviews as $review ) {
-			$rating = (int) get_comment_meta( $review->comment_ID, 'rating', true );
-			$total += max( 0, $rating );
-		}
-
 		return array(
-			'average' => $count > 0 ? $total / $count : 0,
-			'count'   => $count,
+			'average' => (float) $stats->avg_rating,
+			'count'   => (int) $stats->review_count,
 		);
 	}
 
@@ -407,9 +400,6 @@ class ProductSchema {
 
 		foreach ( $reviews as $review ) {
 			$rating = (int) get_comment_meta( $review->comment_ID, 'rating', true );
-			if ( $rating < 4 ) {
-				continue;
-			}
 
 			$objects[] = array(
 				'@type'         => 'Review',
