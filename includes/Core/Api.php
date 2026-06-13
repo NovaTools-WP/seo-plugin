@@ -444,6 +444,8 @@ class Api {
 			$wpdb->insert( $table, $data );
 		}
 
+		wp_cache_delete( 'wseo_redirects', 'novatools-seo' );
+
 		return rest_ensure_response( array( 'success' => true ) );
 	}
 
@@ -451,6 +453,7 @@ class Api {
 		global $wpdb;
 		$table = $wpdb->prefix . 'wseo_redirects';
 		$wpdb->delete( $table, array( 'id' => absint( $request['id'] ) ) );
+		wp_cache_delete( 'wseo_redirects', 'novatools-seo' );
 		return rest_ensure_response( array( 'success' => true ) );
 	}
 

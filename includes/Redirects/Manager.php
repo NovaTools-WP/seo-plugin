@@ -23,15 +23,26 @@ class Manager {
 			return;
 		}
 
-		global $wpdb;
-		$table = $wpdb->prefix . 'wseo_redirects';
-
-		$table_exists = $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $table ) );
-		if ( ! $table_exists ) {
+		$table_exists = get_transient( 'wseo_redirects_table_exists' );
+		if ( false === $table_exists ) {
+			global $wpdb;
+			$table = $wpdb->prefix . 'wseo_redirects';
+			$table_exists = $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $table ) );
+			set_transient( 'wseo_redirects_table_exists', $table_exists ? 'yes' : 'no', DAY_IN_SECONDS );
+			if ( ! $table_exists ) {
+				return;
+			}
+		} elseif ( 'no' === $table_exists ) {
 			return;
 		}
 
-		$redirects = $wpdb->get_results( "SELECT * FROM `" . esc_sql( $table ) . "`" );
+		$redirects = wp_cache_get( 'wseo_redirects', 'novatools-seo' );
+		if ( false === $redirects ) {
+			global $wpdb;
+			$table = $wpdb->prefix . 'wseo_redirects';
+			$redirects = $wpdb->get_results( "SELECT * FROM `" . esc_sql( $table ) . "`" );
+			wp_cache_set( 'wseo_redirects', $redirects, 'novatools-seo', HOUR_IN_SECONDS );
+		}
 
 		foreach ( $redirects as $redirect ) {
 			$matched = false;
