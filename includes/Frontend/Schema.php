@@ -2,6 +2,7 @@
 
 namespace NovaToolsSEO\Frontend;
 
+use NovaToolsSEO\Core\BreadcrumbCollector;
 use NovaToolsSEO\Traits\Base;
 
 defined( 'ABSPATH' ) || exit;
@@ -317,7 +318,8 @@ class Schema {
 	}
 
 	private function get_breadcrumb_schema() {
-		$items = $this->get_breadcrumb_items();
+		$collector = new BreadcrumbCollector();
+		$items = $collector->get_items();
 		if ( empty( $items ) ) {
 			return array();
 		}
@@ -325,12 +327,15 @@ class Schema {
 		$list_items = array();
 		$position = 1;
 		foreach ( $items as $item ) {
-			$list_items[] = array(
+			$entry = array(
 				'@type'    => 'ListItem',
 				'position' => $position++,
 				'name'     => $item['name'],
-				'item'     => $item['url'],
 			);
+			if ( ! empty( $item['url'] ) ) {
+				$entry['item'] = $item['url'];
+			}
+			$list_items[] = $entry;
 		}
 
 		return array(
@@ -338,60 +343,5 @@ class Schema {
 			'@type'    => 'BreadcrumbList',
 			'itemListElement' => $list_items,
 		);
-	}
-
-	private function get_breadcrumb_items() {
-		$items = array(
-			array(
-				'name' => __( 'Home', 'novatools-seo' ),
-				'url'  => home_url( '/' ),
-			),
-		);
-
-		if ( is_singular() ) {
-			$post_id = get_queried_object_id();
-			$post_type = get_post_type( $post_id );
-
-			if ( 'post' === $post_type ) {
-				$categories = get_the_category( $post_id );
-				if ( ! empty( $categories ) ) {
-					$items[] = array(
-						'name' => $categories[0]->name,
-						'url'  => get_category_link( $categories[0]->term_id ),
-					);
-				}
-			} elseif ( 'product' === $post_type && taxonomy_exists( 'product_cat' ) ) {
-				$terms = get_the_terms( $post_id, 'product_cat' );
-				if ( ! empty( $terms ) && ! is_wp_error( $terms ) ) {
-					$items[] = array(
-						'name' => $terms[0]->name,
-						'url'  => get_term_link( $terms[0] ),
-					);
-				}
-			}
-
-			$items[] = array(
-				'name' => get_the_title( $post_id ),
-				'url'  => get_permalink( $post_id ),
-			);
-		} elseif ( is_category() || is_tag() || is_tax() ) {
-			$term = get_queried_object();
-			$items[] = array(
-				'name' => $term->name,
-				'url'  => get_term_link( $term ),
-			);
-		} elseif ( is_post_type_archive() ) {
-			$items[] = array(
-				'name' => post_type_archive_title( '', false ),
-				'url'  => get_post_type_archive_link( get_post_type() ),
-			);
-		} elseif ( is_home() && ! is_front_page() ) {
-			$items[] = array(
-				'name' => single_post_title( '', false ),
-				'url'  => get_permalink( get_option( 'page_for_posts' ) ),
-			);
-		}
-
-		return $items;
 	}
 }
