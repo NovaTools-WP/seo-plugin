@@ -4,7 +4,7 @@
 
 This is a powerful and professional SEO plugin designed as an add-on for the NovaTools ecosystem. It extends the core capabilities of WordPress and WooCommerce with robust SEO features for store owners and content creators.
 
-> **Note:** This plugin requires the base [NovaTools](https://github.com/novatools) plugin to be installed and activated.
+> **Note:** This plugin requires the base [NovaTools](https://github.com/NovaTools-WP/main-plugin) plugin to be installed and activated.
 
 ---
 
@@ -58,10 +58,11 @@ The plugin relies on modern technologies for both the backend and frontend:
 
 If you want to contribute to the codebase, follow these steps to set up your local development environment:
 
-1. **Clone the repository** into your local WordPress installations `wp-content/plugins/` directory:
+1. **Clone the repository** into your WordPress `wp-content/plugins/` directory:
 
    ```bash
-   git clone git@github.com:your-repo/novatools-seo.git
+   cd wp-content/plugins
+   git clone git@github.com:NovaTools-WP/seo-plugin.git novatools-seo
    cd novatools-seo
    ```
 
@@ -71,10 +72,11 @@ If you want to contribute to the codebase, follow these steps to set up your loc
    composer install
    ```
 
-3. **Install JavaScript dependencies** using NPM (or PNPM/Yarn):
+3. **Install JavaScript dependencies** using NPM:
 
    ```bash
    npm install
+   npm run build
    ```
 
 4. **Start the development server** to enable Vite Hot Module Replacement (HMR) for the admin UI:

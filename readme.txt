@@ -1,5 +1,5 @@
 === NovaTools - SEO ===
-Contributors: siimliimand
+Contributors: NovaTools
 Tags: seo, yoast alternative, rankmath alternative, woocommerce seo, sitemap
 Requires at least: 5.8
 Tested up to: 6.4

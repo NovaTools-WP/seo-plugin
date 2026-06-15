@@ -2,8 +2,8 @@
 /**
  * Plugin Name: NovaTools - SEO
  * Description: Comprehensive SEO add-on for NovaTools — meta management, schema, sitemaps, redirects, breadcrumbs, and more.
- * Author: Siim Liimand
- * Author URI:
+ * Author: NovaTools
+ * Author URI: https://novatools.ww0.dev
  * License: GPLv2
  * License URI: https://www.gnu.org/licenses/gpl-2.0.html
  * Version: 1.0.1
