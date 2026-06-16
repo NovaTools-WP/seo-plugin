@@ -4,7 +4,9 @@ namespace NovaToolsSEO\Admin;
 
 use NovaToolsSEO\Traits\Base;
 use NovaToolsSEO\Core\MetaKeys;
+use NovaToolsSEO\Core\Tokens;
 use NovaToolsSEO\Core\DependencyCheck;
+use NovaToolsSEO\Admin\Settings;
 use NovaToolsSEO\Libs\Assets;
 use NovaToolsSEO\Assets\Admin as AssetsAdmin;
 
@@ -41,10 +43,18 @@ class MetaBox {
 	public function render_meta_box( $post ) {
 		$meta = $this->get_post_seo_data( $post->ID );
 		$permalink = get_permalink( $post->ID );
+		$defaults = $this->get_title_defaults( $post );
 
 		wp_nonce_field( 'novatools_seo_save_meta', 'novatools_seo_nonce' );
 
-		echo '<div id="wseo-react-meta-box" data-post-id="' . esc_attr( $post->ID ) . '" data-permalink="' . esc_url( $permalink ) . '" data-meta="' . esc_attr( wp_json_encode( $meta ) ) . '"></div>';
+		printf(
+			'<div id="wseo-react-meta-box" data-post-id="%s" data-permalink="%s" data-default-template="%s" data-default-title="%s" data-meta="%s"></div>',
+			esc_attr( $post->ID ),
+			esc_url( $permalink ),
+			esc_attr( $defaults['template'] ),
+			esc_attr( $defaults['resolved'] ),
+			esc_attr( wp_json_encode( $meta ) )
+		);
 	}
 
 	public function render_term_meta_box( $tag, $taxonomy ) {
@@ -145,6 +155,35 @@ class MetaBox {
 				wp_localize_script( AssetsAdmin::HANDLE, AssetsAdmin::OBJ_NAME, AssetsAdmin::get_instance()->get_data() );
 			}
 		}
+	}
+
+	/**
+	 * Resolve the default SEO title template for the post being edited.
+	 *
+	 * Returns both the raw template (with %%variables%%) and the fully
+	 * resolved value, so the editor can preview the default that applies
+	 * when the per-post SEO title field is left empty.
+	 *
+	 * @param \WP_Post $post The post being edited.
+	 * @return array{template:string,resolved:string}
+	 */
+	private function get_title_defaults( $post ) {
+		$settings  = Settings::get_instance();
+		$post_type = $post->post_type;
+
+		$template = $settings->get(
+			"general_{$post_type}_title_template",
+			$settings->get( 'general_title_template', '%%title%% %%sep%% %%sitename%%' )
+		);
+
+		if ( '' === $template ) {
+			$template = '%%title%% %%sep%% %%sitename%%';
+		}
+
+		return array(
+			'template' => $template,
+			'resolved' => Tokens::replace( $template, $post ),
+		);
 	}
 
 	private function get_post_seo_data( $post_id ) {

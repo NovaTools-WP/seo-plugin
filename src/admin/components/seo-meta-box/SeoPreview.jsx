@@ -13,6 +13,7 @@ import {
 
 export default function SeoPreview({
   title,
+  defaultTitle,
   description,
   url,
   ogTitle,
@@ -93,19 +94,24 @@ export default function SeoPreview({
   const fallbackImage = ogImage || domFeaturedImageUrl || savedThumbnailUrl;
   const twitterFallbackImage = twitterImage || fallbackImage;
 
-  // Title fallback computations
-  const googleTitle = title || "Please enter an SEO title...";
+  // Title fallback computations — fall back to the resolved default title
+  // (from General Settings) before the placeholder prompt.
+  const googleTitle = title || defaultTitle || "Please enter an SEO title...";
   const googleDesc =
     description ||
     "Please enter a meta description so search engines can display a snippet here.";
 
   const facebookTitle =
-    ogTitle || title || "Please enter an OpenGraph title...";
+    ogTitle || title || defaultTitle || "Please enter an OpenGraph title...";
   const facebookDesc =
     ogDesc || description || "Please enter an OpenGraph description...";
 
   const xTitle =
-    twitterTitle || ogTitle || title || "Please enter a Twitter title...";
+    twitterTitle ||
+    ogTitle ||
+    title ||
+    defaultTitle ||
+    "Please enter a Twitter title...";
   const xDesc =
     twitterDesc ||
     ogDesc ||

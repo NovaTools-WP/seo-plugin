@@ -89,9 +89,10 @@ class HeadOutput {
 
 		$title = '';
 		if ( ! empty( $meta['_wseo_title'] ) ) {
-			$title = $meta['_wseo_title'];
+			// Per-post SEO title supports tokens (%%title%%, %%sep%%, %%sitename%%, …).
+			$title = Tokens::replace( $meta['_wseo_title'] );
 		} elseif ( ! empty( $term_meta['_wseo_title'] ) ) {
-			$title = $term_meta['_wseo_title'];
+			$title = Tokens::replace( $term_meta['_wseo_title'] );
 		}
 
 		$settings = Settings::get_instance();
@@ -335,7 +336,7 @@ class HeadOutput {
 
 		$title = $meta['_wseo_og_title'] ?? '';
 		if ( empty( $title ) ) {
-			$title = $meta['_wseo_title'] ?? '';
+			$title = Tokens::replace( $meta['_wseo_title'] ?? '' );
 		}
 
 		$description = $meta['_wseo_og_description'] ?? '';
@@ -395,7 +396,7 @@ class HeadOutput {
 			$title = $meta['_wseo_og_title'] ?? '';
 		}
 		if ( empty( $title ) ) {
-			$title = $meta['_wseo_title'] ?? '';
+			$title = Tokens::replace( $meta['_wseo_title'] ?? '' );
 		}
 
 		$description = $meta['_wseo_twitter_description'] ?? '';

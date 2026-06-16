@@ -15,15 +15,40 @@ const TITLE_MAX = 60;
 const DESC_MAX = 160;
 const SAVE_DEBOUNCE_MS = 800;
 
+// Variables that can be inserted into the SEO title. Mirrors the tokens
+// resolved server-side by NovaToolsSEO\Core\Tokens.
+const TITLE_TOKENS = [
+  { token: "%%title%%", label: "Title", desc: "Post / page / product title" },
+  { token: "%%sitename%%", label: "Site Name", desc: "Site name" },
+  { token: "%%sitedesc%%", label: "Tagline", desc: "Site tagline / description" },
+  { token: "%%sep%%", label: "Separator", desc: "Separator (e.g. –)" },
+  { token: "%%category%%", label: "Category", desc: "Primary category" },
+  { token: "%%page%%", label: "Page", desc: "Page number (on paginated archives)" },
+];
+
 export default function SeoMetaBox() {
   const container = document.getElementById("wseo-react-meta-box");
   const postId = container?.dataset?.postId || "";
   const permalink = container?.dataset?.permalink || "";
+  // Default title template (raw, with %%variables%%) and its resolved value,
+  // computed server-side from General Settings for this post type. The template
+  // is pre-filled into the field when no per-post title is saved.
+  const defaultTemplate = container?.dataset?.defaultTemplate || "";
+  const defaultTitle = container?.dataset?.defaultTitle || "";
   const initialMeta = container?.dataset?.meta
     ? JSON.parse(container.dataset.meta)
     : {};
 
-  const [title, setTitle] = useState(initialMeta._wseo_title || "");
+  // When no per-post SEO title is saved, pre-fill the field with the default
+  // template (%%variables%%) for this content type so it's visible & editable.
+  // `titleTouched` tracks whether the user has customized it: only a touched
+  // title is persisted, so an untouched post keeps following the global
+  // template (and picks up future global-template changes).
+  const savedTitle = initialMeta._wseo_title || "";
+  const [title, setTitle] = useState(savedTitle || defaultTemplate);
+  const [titleTouched, setTitleTouched] = useState(savedTitle !== "");
+  // What actually gets saved for this field — empty unless the user customized.
+  const persistedTitle = titleTouched ? title : "";
   const [description, setDescription] = useState(
     initialMeta._wseo_description || "",
   );
@@ -148,6 +173,31 @@ export default function SeoMetaBox() {
 
   const saveTimer = useRef(null);
   const latestFields = useRef({});
+  const titleInputRef = useRef(null);
+
+  // Insert a %%variable%% into the SEO title at the caret position.
+  const insertToken = useCallback(
+    (token) => {
+      const input = titleInputRef.current;
+      let start = title.length;
+      let end = title.length;
+      if (input) {
+        start = input.selectionStart ?? title.length;
+        end = input.selectionEnd ?? title.length;
+      }
+      setTitle(title.slice(0, start) + token + title.slice(end));
+      setTitleTouched(true);
+      // Restore focus and place the caret right after the inserted token.
+      requestAnimationFrame(() => {
+        const el = titleInputRef.current;
+        if (!el) return;
+        el.focus();
+        const pos = start + token.length;
+        el.setSelectionRange(pos, pos);
+      });
+    },
+    [title],
+  );
 
   const saveMeta = useCallback(
     async (fields) => {
@@ -166,7 +216,7 @@ export default function SeoMetaBox() {
   // Debounced save: collect latest field values and save after user stops typing
   useEffect(() => {
     latestFields.current = {
-      _wseo_title: title,
+      _wseo_title: persistedTitle,
       _wseo_description: description,
       _wseo_canonical: canonical,
       _wseo_robots: robots,
@@ -189,7 +239,7 @@ export default function SeoMetaBox() {
       if (saveTimer.current) clearTimeout(saveTimer.current);
     };
   }, [
-    title,
+    persistedTitle,
     description,
     canonical,
     robots,
@@ -247,7 +297,8 @@ export default function SeoMetaBox() {
       />
 
       <SeoPreview
-        title={title}
+        title={titleTouched ? title : defaultTitle}
+        defaultTitle={defaultTitle}
         description={description}
         url={permalink}
         ogTitle={ogTitle}
@@ -272,12 +323,59 @@ export default function SeoMetaBox() {
           </span>
         </label>
         <input
+          ref={titleInputRef}
           type="text"
           value={title}
-          onChange={(e) => setTitle(e.target.value)}
+          onChange={(e) => {
+            setTitle(e.target.value);
+            setTitleTouched(true);
+          }}
           className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
           placeholder="Enter SEO title..."
         />
+
+        {/* Clickable variables — insert a %%token%% at the caret */}
+        <div className="mt-1.5 flex flex-wrap items-center gap-1">
+          <span className="text-[11px] font-medium text-gray-400">
+            Variables:
+          </span>
+          {TITLE_TOKENS.map((tok) => (
+            <button
+              key={tok.token}
+              type="button"
+              onClick={() => insertToken(tok.token)}
+              title={tok.desc}
+              className="rounded border border-gray-200 bg-gray-50 px-1.5 py-0.5 font-mono text-[11px] text-gray-600 transition-colors hover:border-blue-300 hover:bg-blue-50 hover:text-blue-700 cursor-pointer"
+            >
+              {tok.token}
+            </button>
+          ))}
+        </div>
+
+        {/* Default-template indicator — shown while the field still holds the
+            untouched default (not yet customized for this post). */}
+        {!titleTouched && defaultTemplate && (
+          <p
+            className="mt-1.5 text-xs text-gray-400"
+            title={defaultTemplate}
+          >
+            {defaultTitle ? (
+              <>
+                Default template (resolves to{" "}
+                <span className="text-gray-500">{defaultTitle}</span>) — edit
+                to customize this post.
+              </>
+            ) : (
+              <>
+                Default template{" "}
+                <code className="rounded bg-gray-100 px-1 py-0.5 font-mono text-[11px] text-gray-600">
+                  {defaultTemplate}
+                </code>{" "}
+                — edit to customize this post.
+              </>
+            )}
+          </p>
+        )}
       </div>
 
       <div>
