@@ -5,7 +5,10 @@ namespace NovaToolsSEO\Core;
 use NovaToolsSEO\Admin\License;
 use NovaToolsSEO\Admin\Settings;
 use NovaToolsSEO\Admin\YoastImport;
+use NovaToolsSEO\Analysis\ContentAnalyzer;
+use NovaToolsSEO\Analysis\LinkAnalyzer;
 use NovaToolsSEO\Core\MetaKeys;
+use NovaToolsSEO\Frontend\Schema\SchemaRegistry;
 use NovaToolsSEO\Sitemaps\Generator;
 use NovaToolsSEO\Redirects\FourOhFourLogger;
 use NovaToolsSEO\Traits\Base;
@@ -94,6 +97,47 @@ class Api {
 				'permission_callback' => function() {
 					return current_user_can( 'edit_posts' );
 				},
+			),
+		) );
+
+		register_rest_route( $namespace, '/analyze', array(
+			'methods'             => 'POST',
+			'callback'            => array( $this, 'analyze_content' ),
+			'permission_callback' => function( $request ) {
+				$params = $request->get_json_params();
+				$post_id = isset( $params['post_id'] ) ? absint( $params['post_id'] ) : 0;
+				return $post_id > 0 && current_user_can( 'edit_post', $post_id );
+			},
+			'args'                => array(
+				'post_id'     => array( 'required' => true, 'type' => 'integer' ),
+				'keyphrase'   => array( 'type' => 'string' ),
+				'content'     => array( 'type' => 'string' ),
+				'title'       => array( 'type' => 'string' ),
+				'description' => array( 'type' => 'string' ),
+			),
+		) );
+
+		register_rest_route( $namespace, '/schema-types', array(
+			'methods'             => 'GET',
+			'callback'            => array( $this, 'get_schema_types' ),
+			'permission_callback' => function() {
+				return current_user_can( 'edit_posts' );
+			},
+			'args'                => array(
+				'post_type' => array( 'type' => 'string' ),
+			),
+		) );
+
+		register_rest_route( $namespace, '/link-suggestions/(?P<id>\d+)', array(
+			'methods'             => 'GET',
+			'callback'            => array( $this, 'get_link_suggestions' ),
+			'permission_callback' => function( $request ) {
+				return current_user_can( 'edit_post', (int) $request['id'] );
+			},
+			'args'                => array(
+				'id'        => array( 'required' => true, 'type' => 'integer' ),
+				'limit'     => array( 'type' => 'integer' ),
+				'keyphrase' => array( 'type' => 'string' ),
 			),
 		) );
 
@@ -352,6 +396,15 @@ class Api {
 			}
 		}
 
+		// Core site identity (blogname / blogdescription) feeds the
+		// %%sitename%% / %%sitedesc%% title tokens; handled explicitly since
+		// they are not wseo_-prefixed options.
+		foreach ( array( 'blogname', 'blogdescription' ) as $identity_key ) {
+			if ( array_key_exists( $identity_key, $params ) ) {
+				update_option( $identity_key, sanitize_text_field( $params[ $identity_key ] ) );
+			}
+		}
+
 		return rest_ensure_response( array( 'success' => true ) );
 	}
 
@@ -366,6 +419,10 @@ class Api {
 		foreach ( MetaKeys::POST_ALL as $key ) {
 			$data[ $key ] = get_post_meta( $post_id, $key, true );
 		}
+
+		// Structured schema data (array — handled separately from POST_ALL).
+		$schema = get_post_meta( $post_id, '_wseo_schema', true );
+		$data['_wseo_schema'] = is_array( $schema ) ? $schema : array();
 
 		return rest_ensure_response( $data );
 	}
@@ -385,7 +442,101 @@ class Api {
 			}
 		}
 
+		// Structured schema data: array, sanitized per-type. array_key_exists
+		// lets sending an empty array/null clear it. Do NOT declare this in the
+		// route args — REST object/array typing rejects nested arrays.
+		if ( array_key_exists( '_wseo_schema', $params ) ) {
+			$clean = SchemaRegistry::sanitize_for_storage( $params['_wseo_schema'] );
+			if ( empty( $clean ) ) {
+				delete_post_meta( $post_id, '_wseo_schema' );
+			} else {
+				update_post_meta( $post_id, '_wseo_schema', $clean );
+			}
+		}
+
 		return rest_ensure_response( array( 'success' => true ) );
+	}
+
+	/**
+	 * Return the schema-type registry configuration for the admin builder.
+	 *
+	 * @param \WP_REST_Request $request Request.
+	 * @return \WP_REST_Response
+	 */
+	public function get_schema_types( $request ) {
+		$post_type = sanitize_text_field( $request['post_type'] ?? '' );
+		return rest_ensure_response(
+			SchemaRegistry::get_instance()->get_config( $post_type )
+		);
+	}
+
+	/**
+	 * Return ranked internal-link suggestions for a post.
+	 *
+	 * @param \WP_REST_Request $request Request.
+	 * @return \WP_REST_Response
+	 */
+	public function get_link_suggestions( $request ) {
+		$post_id   = (int) $request['id'];
+		$limit     = isset( $request['limit'] ) ? absint( $request['limit'] ) : 5;
+		$keyphrase = isset( $request['keyphrase'] ) ? sanitize_text_field( $request['keyphrase'] ) : '';
+
+		$post = $post_id ? get_post( $post_id ) : null;
+		if ( ! $post ) {
+			return new \WP_Error( 'not_found', __( 'Post not found.', 'novatools-seo' ), array( 'status' => 404 ) );
+		}
+
+		$suggestions = LinkAnalyzer::get_instance()->get_suggestions( $post_id, $limit, $keyphrase );
+		return rest_ensure_response( array( 'suggestions' => $suggestions ) );
+	}
+
+	/**
+	 * Run content/readability/keyphrase analysis for a post.
+	 *
+	 * Accepts live overrides (content/title/description) from the editor so
+	 * results update as the user types; falls back to the saved post. Results
+	 * are transient-cached (keyed on the full param set) to avoid recomputing
+	 * on repeated identical requests. Aggregate scores are persisted on
+	 * save_post, not here, since this endpoint fires per keystroke.
+	 *
+	 * @param \WP_REST_Request $request Request.
+	 * @return \WP_REST_Response
+	 */
+	public function analyze_content( $request ) {
+		$params  = $request->get_json_params();
+		$post_id = absint( $params['post_id'] ?? 0 );
+
+		if ( ! current_user_can( 'edit_post', $post_id ) ) {
+			return new \WP_Error( 'forbidden', 'You cannot edit this post.', array( 'status' => 403 ) );
+		}
+
+		$args = array( 'post_id' => $post_id );
+
+		if ( isset( $params['keyphrase'] ) ) {
+			$args['keyphrase'] = sanitize_text_field( $params['keyphrase'] );
+		}
+		if ( isset( $params['title'] ) ) {
+			$args['title'] = sanitize_text_field( $params['title'] );
+		}
+		if ( isset( $params['description'] ) ) {
+			$args['description'] = sanitize_text_field( $params['description'] );
+		}
+		if ( isset( $params['content'] ) && '' !== $params['content'] ) {
+			// Neutralize anything nasty before the analyzer strips tags.
+			$args['content'] = wp_kses_post( wp_unslash( $params['content'] ) );
+		}
+
+		// Short-lived cache keyed on the full param set.
+		$cache_key = 'wseo_analysis_' . $post_id . '_' . md5( (string) wp_json_encode( $args ) );
+		$cached    = get_transient( $cache_key );
+		if ( false !== $cached && is_array( $cached ) ) {
+			return rest_ensure_response( $cached );
+		}
+
+		$result = ContentAnalyzer::get_instance()->analyze( $args );
+		set_transient( $cache_key, $result, HOUR_IN_SECONDS );
+
+		return rest_ensure_response( $result );
 	}
 
 	public function get_product_meta( $request ) {
@@ -793,6 +944,8 @@ class Api {
 			'redirect_count'  => $redirect_count,
 			'license_status'  => $license_status,
 			'post_types'      => $types_list,
+			'setup_completed' => get_option( 'wseo_setup_completed', '' ) === '1',
+			'setup_skipped'   => get_option( 'wseo_setup_skipped', '' ) === '1',
 		) );
 	}
 

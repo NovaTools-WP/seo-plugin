@@ -5,6 +5,7 @@ import * as api from "../api";
 export default function Sitemaps() {
   const [enabled, setEnabled] = useState(true);
   const [pingEnabled, setPingEnabled] = useState(true);
+  const [cornerstoneSeparate, setCornerstoneSeparate] = useState(false);
   const [threshold, setThreshold] = useState(30);
   const [rebuilding, setRebuilding] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -16,6 +17,7 @@ export default function Sitemaps() {
     api.get("/settings").then((s) => {
       setEnabled(s.wseo_sitemap_enabled !== "0");
       setPingEnabled(s.wseo_sitemap_ping_enabled !== "0");
+      setCornerstoneSeparate(s.wseo_cornerstone_separate_sitemap === "1");
       if (s.wseo_outofstock_threshold !== undefined) {
         setThreshold(parseInt(s.wseo_outofstock_threshold, 10) || 0);
       }
@@ -47,6 +49,25 @@ export default function Sitemaps() {
       });
       setMessage(
         "Search engine ping " + (checked ? "enabled" : "disabled") + ".",
+      );
+    } catch {
+      setMessage("Error updating setting.");
+    }
+    setSaving(false);
+  }
+
+  async function toggleCornerstoneSeparate(checked) {
+    setCornerstoneSeparate(checked);
+    setSaving(true);
+    setMessage("");
+    try {
+      await api.post("/settings", {
+        wseo_cornerstone_separate_sitemap: checked ? "1" : "0",
+      });
+      setMessage(
+        checked
+          ? "Cornerstone posts moved to a separate sitemap."
+          : "Cornerstone posts included in the main sitemap.",
       );
     } catch {
       setMessage("Error updating setting.");
@@ -120,6 +141,25 @@ export default function Sitemaps() {
           <Switch.Root
             checked={pingEnabled}
             onCheckedChange={togglePingEnabled}
+            className="relative h-6 w-11 rounded-full bg-gray-200 data-[state=checked]:bg-blue-600"
+          >
+            <Switch.Thumb className="block h-5 w-5 translate-x-0.5 rounded-full bg-white shadow transition-transform data-[state=checked]:translate-x-[22px]" />
+          </Switch.Root>
+        </div>
+
+        <div className="flex items-center justify-between rounded-lg border border-gray-200 bg-white p-4">
+          <div>
+            <p className="text-sm font-medium text-gray-900">
+              Separate Cornerstone Sitemap
+            </p>
+            <p className="text-xs text-gray-500">
+              Move cornerstone posts into sitemap-cornerstone.xml and keep them
+              out of the per-type sitemaps
+            </p>
+          </div>
+          <Switch.Root
+            checked={cornerstoneSeparate}
+            onCheckedChange={toggleCornerstoneSeparate}
             className="relative h-6 w-11 rounded-full bg-gray-200 data-[state=checked]:bg-blue-600"
           >
             <Switch.Thumb className="block h-5 w-5 translate-x-0.5 rounded-full bg-white shadow transition-transform data-[state=checked]:translate-x-[22px]" />
@@ -207,6 +247,19 @@ export default function Sitemaps() {
                     </span>
                   </li>
                 ))}
+                <li>
+                  <a
+                    href={siteUrl + "sitemap-cornerstone.xml"}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-sm text-blue-600 hover:underline"
+                  >
+                    {siteUrl}sitemap-cornerstone.xml
+                  </a>
+                  <span className="ml-2 text-xs text-gray-400">
+                    (cornerstone content)
+                  </span>
+                </li>
               </ul>
             </div>
           </>

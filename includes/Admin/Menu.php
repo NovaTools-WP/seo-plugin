@@ -44,6 +44,7 @@ class Menu {
 			array( 'path' => 'seo/woo-seo',           'component' => 'WooCommerceSEO' ),
 			array( 'path' => 'seo/tools',             'component' => 'Tools' ),
 			array( 'path' => 'seo/geo',               'component' => 'GEO' ),
+			array( 'path' => 'seo/setup-wizard',      'component' => 'SetupWizard' ),
 		);
 
 		foreach ( $sub_routes as $sub ) {

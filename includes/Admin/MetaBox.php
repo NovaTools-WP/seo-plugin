@@ -6,6 +6,7 @@ use NovaToolsSEO\Traits\Base;
 use NovaToolsSEO\Core\MetaKeys;
 use NovaToolsSEO\Core\Tokens;
 use NovaToolsSEO\Core\DependencyCheck;
+use NovaToolsSEO\Frontend\Schema\SchemaRegistry;
 use NovaToolsSEO\Admin\Settings;
 use NovaToolsSEO\Libs\Assets;
 use NovaToolsSEO\Assets\Admin as AssetsAdmin;
@@ -48,8 +49,9 @@ class MetaBox {
 		wp_nonce_field( 'novatools_seo_save_meta', 'novatools_seo_nonce' );
 
 		printf(
-			'<div id="wseo-react-meta-box" data-post-id="%s" data-permalink="%s" data-default-template="%s" data-default-title="%s" data-meta="%s"></div>',
+			'<div id="wseo-react-meta-box" data-post-id="%s" data-post-type="%s" data-permalink="%s" data-default-template="%s" data-default-title="%s" data-meta="%s"></div>',
 			esc_attr( $post->ID ),
+			esc_attr( $post->post_type ),
 			esc_url( $permalink ),
 			esc_attr( $defaults['template'] ),
 			esc_attr( $defaults['resolved'] ),
@@ -99,7 +101,19 @@ class MetaBox {
 
 		foreach ( MetaKeys::POST_ALL as $field ) {
 			if ( isset( $_POST[ $field ] ) ) {
-				update_post_meta( $post_id, $field, sanitize_text_field( $_POST[ $field ] ) );
+				update_post_meta( $post_id, $field, sanitize_text_field( wp_unslash( $_POST[ $field ] ) ) );
+			}
+		}
+
+		// Structured schema data (array) sent as a JSON string from the
+		// classic-editor hidden-input fallback.
+		if ( isset( $_POST['_wseo_schema'] ) ) {
+			$decoded = json_decode( wp_unslash( $_POST['_wseo_schema'] ), true );
+			$clean   = is_array( $decoded ) ? SchemaRegistry::sanitize_for_storage( $decoded ) : array();
+			if ( empty( $clean ) ) {
+				delete_post_meta( $post_id, '_wseo_schema' );
+			} else {
+				update_post_meta( $post_id, '_wseo_schema', $clean );
 			}
 		}
 	}
@@ -115,7 +129,7 @@ class MetaBox {
 
 		foreach ( MetaKeys::TERM_SEO as $field ) {
 			if ( isset( $_POST[ $field ] ) ) {
-				update_term_meta( $term_id, $field, sanitize_text_field( $_POST[ $field ] ) );
+				update_term_meta( $term_id, $field, sanitize_text_field( wp_unslash( $_POST[ $field ] ) ) );
 			}
 		}
 	}
@@ -187,11 +201,16 @@ class MetaBox {
 	}
 
 	private function get_post_seo_data( $post_id ) {
-		$keys = array_merge( MetaKeys::POST_ALL, [ '_thumbnail_id' ] );
+		$keys = array_merge( MetaKeys::POST_ALL, MetaKeys::POST_SCHEMA, [ '_thumbnail_id' ] );
 
 		$data = array();
 		foreach ( $keys as $key ) {
 			$data[ $key ] = get_post_meta( $post_id, $key, true );
+		}
+
+		// Ensure the structured schema payload is always an array for the UI.
+		if ( ! is_array( $data['_wseo_schema'] ) ) {
+			$data['_wseo_schema'] = array();
 		}
 
 		if ( has_post_thumbnail( $post_id ) ) {

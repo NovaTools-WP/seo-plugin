@@ -1,11 +1,14 @@
 <?php
 
 use NovaToolsSEO\Admin\BrandSameAs;
+use NovaToolsSEO\Admin\Cornerstone;
 use NovaToolsSEO\Admin\ContentListSeoColumn;
 use NovaToolsSEO\Admin\License;
 use NovaToolsSEO\Admin\Menu;
 use NovaToolsSEO\Admin\MetaBox;
 use NovaToolsSEO\Admin\Settings;
+use NovaToolsSEO\Analysis\ContentAnalyzer;
+use NovaToolsSEO\Analysis\LinkCounter;
 use NovaToolsSEO\Assets\Admin;
 use NovaToolsSEO\Core\Api;
 use NovaToolsSEO\Core\Logger;
@@ -14,6 +17,7 @@ use NovaToolsSEO\Frontend\HeadOutput;
 use NovaToolsSEO\Frontend\IndexNow;
 use NovaToolsSEO\Frontend\RobotsTxt;
 use NovaToolsSEO\Frontend\Schema;
+use NovaToolsSEO\Frontend\Schema\SchemaRegistry;
 use NovaToolsSEO\Frontend\ProductSchema;
 use NovaToolsSEO\Redirects\FourOhFourLogger;
 use NovaToolsSEO\Redirects\Manager as RedirectManager;
@@ -44,6 +48,7 @@ final class NovaToolsSEO {
 			MetaBox::get_instance()->init();
 			License::get_instance()->init();
 			ContentListSeoColumn::get_instance()->init();
+			Cornerstone::get_instance()->init();
 		}
 
 		if ( class_exists( 'WooCommerce' ) ) {
@@ -64,6 +69,8 @@ final class NovaToolsSEO {
 		RedirectManager::get_instance()->init();
 		FourOhFourLogger::get_instance()->init();
 		Api::get_instance()->init();
+		ContentAnalyzer::get_instance()->init();
+		LinkCounter::get_instance()->init();
 		GMCRestController::get_instance()->init();
 		StockTracker::get_instance()->init();
 		Settings::get_instance()->init();
@@ -71,6 +78,7 @@ final class NovaToolsSEO {
 		if ( ! is_admin() ) {
 			HeadOutput::get_instance()->init();
 			Schema::get_instance()->init();
+			SchemaRegistry::get_instance()->init();
 			RobotsTxt::get_instance()->init();
 			Breadcrumbs::get_instance()->init();
 			Generator::get_instance()->init();

@@ -1,19 +1,10 @@
 import React from "react";
-
-const RADIUS = 36;
-const STROKE = 5;
-const CIRCUMFERENCE = 2 * Math.PI * RADIUS;
+import ScoreGauge from "../common/ScoreGauge";
 
 function gaugeColor(pct) {
   if (pct >= 86) return "text-green-500";
   if (pct >= 50) return "text-yellow-500";
   return "text-red-500";
-}
-
-function gaugeStroke(pct) {
-  if (pct >= 86) return "stroke-green-500";
-  if (pct >= 50) return "stroke-yellow-500";
-  return "stroke-red-500";
 }
 
 export default function SeoCompletenessGauge({
@@ -22,8 +13,6 @@ export default function SeoCompletenessGauge({
   passed,
   total,
 }) {
-  const dashOffset = CIRCUMFERENCE - (percentage / 100) * CIRCUMFERENCE;
-
   return (
     <div className="rounded-md border border-gray-200 bg-white p-4">
       <h3 className="mb-3 text-sm font-semibold text-gray-700">
@@ -32,38 +21,8 @@ export default function SeoCompletenessGauge({
       </h3>
 
       <div className="flex items-start gap-4">
-        {/* SVG gauge */}
-        <div className="relative shrink-0">
-          <svg width={(RADIUS + STROKE) * 2} height={(RADIUS + STROKE) * 2}>
-            <circle
-              cx={RADIUS + STROKE}
-              cy={RADIUS + STROKE}
-              r={RADIUS}
-              fill="none"
-              stroke="#e5e7eb"
-              strokeWidth={STROKE}
-            />
-            <circle
-              cx={RADIUS + STROKE}
-              cy={RADIUS + STROKE}
-              r={RADIUS}
-              fill="none"
-              className={gaugeStroke(percentage)}
-              strokeWidth={STROKE}
-              strokeDasharray={CIRCUMFERENCE}
-              strokeDashoffset={dashOffset}
-              strokeLinecap="round"
-              transform={`rotate(-90 ${RADIUS + STROKE} ${RADIUS + STROKE})`}
-            />
-          </svg>
-          <span
-            className={`absolute inset-0 flex items-center justify-center text-sm font-bold ${gaugeColor(
-              percentage,
-            )}`}
-          >
-            {percentage}%
-          </span>
-        </div>
+        {/* SVG gauge (shared ScoreGauge component) */}
+        <ScoreGauge percentage={percentage} />
 
         {/* Checklist */}
         <ul className="flex-1 space-y-1">

@@ -76,6 +76,9 @@ class Settings {
 			),
 			'wseo_page_suffix_separator'     => '–',
 			'wseo_redirect_allowed_domains'  => array(),
+			'wseo_cornerstone_separate_sitemap' => '',
+			'wseo_setup_completed'           => '',
+			'wseo_setup_skipped'             => '',
 		);
 	}
 
@@ -123,6 +126,9 @@ class Settings {
 			case 'wseo_indexnow_enabled':
 			case 'wseo_indexnow_api_key':
 			case 'wseo_page_suffix_separator':
+			case 'wseo_cornerstone_separate_sitemap':
+			case 'wseo_setup_completed':
+			case 'wseo_setup_skipped':
 				return sanitize_text_field( $value );
 
 			case 'wseo_social_og_default_image':

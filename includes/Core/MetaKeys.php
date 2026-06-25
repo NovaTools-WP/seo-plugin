@@ -11,6 +11,7 @@ class MetaKeys {
 		'_wseo_description',
 		'_wseo_canonical',
 		'_wseo_robots',
+		'_wseo_focus_keyphrase',
 		'_wseo_og_title',
 		'_wseo_og_description',
 		'_wseo_og_image',
@@ -25,6 +26,7 @@ class MetaKeys {
 		'_wseo_description',
 		'_wseo_canonical',
 		'_wseo_robots',
+		'_wseo_focus_keyphrase',
 		'_wseo_og_title',
 		'_wseo_og_description',
 		'_wseo_og_image',
@@ -33,6 +35,15 @@ class MetaKeys {
 		'_wseo_twitter_description',
 		'_wseo_twitter_image',
 		'_wseo_local_business',
+		'_wseo_cornerstone',
+	];
+
+	/**
+	 * Array/structured meta exposed via REST but NOT consumed by the text-only
+	 * POST_ALL sanitize loops. Sanitized via SchemaRegistry::sanitize_for_storage.
+	 */
+	const POST_SCHEMA = [
+		'_wseo_schema',
 	];
 
 	const TERM_SEO = [

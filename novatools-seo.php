@@ -31,6 +31,8 @@ require_once plugin_dir_path( __FILE__ ) . 'plugin.php';
 function novatools_seo_activate() {
 	DependencyCheck::check_activation();
 	Install::get_instance()->init();
+	// Backfill link counts for existing content (computed on save for new posts).
+	NovaToolsSEO\Analysis\LinkCounter::get_instance()->backfill();
 }
 register_activation_hook( __FILE__, 'novatools_seo_activate' );
 

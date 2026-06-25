@@ -2,6 +2,7 @@
 
 namespace NovaToolsSEO\Sitemaps;
 
+use NovaToolsSEO\Admin\Cornerstone;
 use NovaToolsSEO\Admin\Settings;
 use NovaToolsSEO\Core\Logger;
 use NovaToolsSEO\Traits\Base;
@@ -12,6 +13,20 @@ defined( 'ABSPATH' ) || exit;
 class Generator {
 
 	use Base;
+
+	/**
+	 * Cached video-sitemap entries (id + data).
+	 *
+	 * @var array|null
+	 */
+	private $video_posts;
+
+	/**
+	 * Cached cornerstone post IDs (or empty array).
+	 *
+	 * @var int[]|null
+	 */
+	private $cornerstone_ids;
 
 	public function init() {
 		add_action( 'init', array( $this, 'add_rewrite_rules' ) );
@@ -76,6 +91,14 @@ class Generator {
 			$this->build_taxonomy_sitemap( $sitemap_dir, $taxonomy );
 		}
 
+		if ( $this->video_has_entries() ) {
+			$this->build_video_sitemap( $sitemap_dir );
+		}
+
+		if ( $this->cornerstone_has_entries() ) {
+			$this->build_cornerstone_sitemap( $sitemap_dir );
+		}
+
 		$this->ping_search_engines();
 	}
 
@@ -110,6 +133,16 @@ class Generator {
 
 		if ( 'index' === $sitemap ) {
 			$this->build_index( $sitemap_dir );
+			return;
+		}
+
+		if ( 'video' === $sitemap ) {
+			file_put_contents( $sitemap_dir . '/sitemap-video.xml', $this->get_video_sitemap_xml() );
+			return;
+		}
+
+		if ( 'cornerstone' === $sitemap ) {
+			file_put_contents( $sitemap_dir . '/sitemap-cornerstone.xml', $this->get_cornerstone_sitemap_xml() );
 			return;
 		}
 
@@ -155,6 +188,16 @@ class Generator {
 			}
 		}
 
+		// Video sitemap (posts with a VideoObject in _wseo_schema).
+		if ( $this->video_has_entries() ) {
+			$child_sitemaps[] = $url . 'sitemap-video.xml';
+		}
+
+		// Cornerstone sitemap (posts flagged _wseo_cornerstone).
+		if ( $this->cornerstone_has_entries() ) {
+			$child_sitemaps[] = $url . 'sitemap-cornerstone.xml';
+		}
+
 		$xml = '<?xml version="1.0" encoding="UTF-8"?>' . "\n";
 		$xml .= '<sitemapindex xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">' . "\n";
 
@@ -171,6 +214,14 @@ class Generator {
 	}
 
 	private function get_child_sitemap_xml( $type ) {
+		if ( 'video' === $type ) {
+			return $this->get_video_sitemap_xml();
+		}
+
+		if ( 'cornerstone' === $type ) {
+			return $this->get_cornerstone_sitemap_xml();
+		}
+
 		$is_product = ( 'product' === $type );
 
 		$xml = '<?xml version="1.0" encoding="UTF-8"?>' . "\n";
@@ -316,6 +367,228 @@ class Generator {
 		return $xml;
 	}
 
+	/**
+	 * Collect published posts that have a usable VideoObject in `_wseo_schema`.
+	 *
+	 * A "usable" video needs at least a title and a thumbnail (the minimum the
+	 * sitemap <video:video> entry emits). Results are cached per instance.
+	 *
+	 * @return array Array of [ 'id' => int, 'data' => array ].
+	 */
+	private function get_video_posts() {
+		if ( isset( $this->video_posts ) ) {
+			return $this->video_posts;
+		}
+
+		$post_types = $this->get_sitemap_post_types();
+		if ( empty( $post_types ) ) {
+			$this->video_posts = array();
+			return $this->video_posts;
+		}
+
+		$query = new \WP_Query( array(
+			'post_type'      => $post_types,
+			'post_status'    => 'publish',
+			'posts_per_page' => 5000,
+			'fields'         => 'ids',
+			'no_found_rows'  => true,
+			'meta_query'     => array(
+				array(
+					'key'     => '_wseo_schema',
+					'value'   => '"video"',
+					'compare' => 'LIKE',
+				),
+			),
+		) );
+
+		$videos = array();
+		foreach ( $query->posts as $pid ) {
+			$schema = get_post_meta( $pid, '_wseo_schema', true );
+			if ( ! is_array( $schema ) || empty( $schema['video'] ) || ! is_array( $schema['video'] ) ) {
+				continue;
+			}
+			$v     = $schema['video'];
+			$name  = trim( (string) ( $v['name'] ?? '' ) );
+			$thumb = trim( (string) ( $v['thumbnail_url'] ?? '' ) );
+			if ( '' === $name || '' === $thumb ) {
+				continue;
+			}
+			$videos[] = array(
+				'id'   => $pid,
+				'data' => $v,
+			);
+		}
+
+		$this->video_posts = $videos;
+		return $this->video_posts;
+	}
+
+	/**
+	 * Whether any publishable video entries exist.
+	 *
+	 * @return bool
+	 */
+	private function video_has_entries() {
+		return ! empty( $this->get_video_posts() );
+	}
+
+	/**
+	 * Build the video sitemap XML.
+	 *
+	 * @return string
+	 */
+	private function get_video_sitemap_xml() {
+		$xml = '<?xml version="1.0" encoding="UTF-8"?>' . "\n";
+		$xml .= '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:video="http://www.google.com/schemas/sitemap-video/1.1">' . "\n";
+
+		foreach ( $this->get_video_posts() as $entry ) {
+			$pid = $entry['id'];
+			$v   = $entry['data'];
+
+			$xml .= "  <url>\n";
+			$xml .= '    <loc>' . esc_url( get_permalink( $pid ) ) . '</loc>' . "\n";
+			$xml .= "    <video:video>\n";
+
+			$xml .= '      <video:title>' . esc_html( trim( (string) ( $v['name'] ?? '' ) ) ) . '</video:title>' . "\n";
+
+			$desc = trim( (string) ( $v['description'] ?? '' ) );
+			if ( '' !== $desc ) {
+				$xml .= '      <video:description>' . esc_html( $desc ) . '</video:description>' . "\n";
+			}
+
+			$xml .= '      <video:thumbnail_loc>' . esc_url( trim( (string) ( $v['thumbnail_url'] ?? '' ) ) ) . '</video:thumbnail_loc>' . "\n";
+
+			if ( ! empty( $v['content_url'] ) ) {
+				$xml .= '      <video:content_loc>' . esc_url( trim( (string) $v['content_url'] ) ) . '</video:content_loc>' . "\n";
+			}
+			if ( ! empty( $v['embed_url'] ) ) {
+				$xml .= '      <video:player_loc>' . esc_url( trim( (string) $v['embed_url'] ) ) . '</video:player_loc>' . "\n";
+			}
+			if ( ! empty( $v['duration'] ) ) {
+				$secs = $this->iso8601_duration_to_seconds( $v['duration'] );
+				if ( $secs > 0 ) {
+					$xml .= '      <video:duration>' . intval( $secs ) . '</video:duration>' . "\n";
+				}
+			}
+			if ( ! empty( $v['upload_date'] ) ) {
+				$xml .= '      <video:publication_date>' . esc_html( $v['upload_date'] ) . '</video:publication_date>' . "\n";
+			}
+
+			$xml .= "    </video:video>\n";
+			$xml .= "  </url>\n";
+		}
+
+		$xml .= '</urlset>';
+		return $xml;
+	}
+
+	/**
+	 * Write the video sitemap file to disk.
+	 *
+	 * @param string $dir Sitemap directory.
+	 * @return void
+	 */
+	private function build_video_sitemap( $dir ) {
+		file_put_contents( $dir . '/sitemap-video.xml', $this->get_video_sitemap_xml() );
+	}
+
+	/**
+	 * Collect published post IDs flagged as cornerstone.
+	 *
+	 * @return int[] Cached on the instance.
+	 */
+	private function get_cornerstone_posts() {
+		if ( isset( $this->cornerstone_ids ) ) {
+			return $this->cornerstone_ids;
+		}
+
+		$post_types = $this->get_sitemap_post_types();
+		if ( empty( $post_types ) ) {
+			$this->cornerstone_ids = array();
+			return $this->cornerstone_ids;
+		}
+
+		$query = new \WP_Query( array(
+			'post_type'      => $post_types,
+			'post_status'    => 'publish',
+			'posts_per_page' => 5000,
+			'fields'         => 'ids',
+			'no_found_rows'  => true,
+			'meta_query'     => array(
+				array(
+					'key'   => Cornerstone::META_KEY,
+					'value' => '1',
+				),
+			),
+		) );
+
+		$this->cornerstone_ids = array_map( 'absint', $query->posts );
+		return $this->cornerstone_ids;
+	}
+
+	/**
+	 * Whether any cornerstone posts exist.
+	 *
+	 * @return bool
+	 */
+	private function cornerstone_has_entries() {
+		return ! empty( $this->get_cornerstone_posts() );
+	}
+
+	/**
+	 * Build the cornerstone sitemap XML.
+	 *
+	 * @return string
+	 */
+	private function get_cornerstone_sitemap_xml() {
+		$xml = '<?xml version="1.0" encoding="UTF-8"?>' . "\n";
+		$xml .= '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">' . "\n";
+
+		foreach ( $this->get_cornerstone_posts() as $pid ) {
+			$post = get_post( $pid );
+			if ( ! $post ) {
+				continue;
+			}
+			$xml .= $this->get_url_entry( get_permalink( $pid ), $post->post_modified_gmt, 'weekly', '1.0' );
+		}
+
+		$xml .= '</urlset>';
+		return $xml;
+	}
+
+	/**
+	 * Write the cornerstone sitemap file to disk.
+	 *
+	 * @param string $dir Sitemap directory.
+	 * @return void
+	 */
+	private function build_cornerstone_sitemap( $dir ) {
+		file_put_contents( $dir . '/sitemap-cornerstone.xml', $this->get_cornerstone_sitemap_xml() );
+	}
+
+	/**
+	 * Convert an ISO 8601 duration (e.g. PT1M30S) to whole seconds.
+	 *
+	 * Only the time components (H/M/S) and days are counted — video durations
+	 * never meaningfully use years/months, and the M-before-T token (months)
+	 * is ignored to avoid ambiguity with minutes.
+	 *
+	 * @param string $duration ISO 8601 duration.
+	 * @return int
+	 */
+	private function iso8601_duration_to_seconds( $duration ) {
+		if ( ! preg_match( '/^P(\d+Y)?(\d+M)?(\d+D)?(?:T(\d+H)?(\d+M)?(\d+S)?)?$/', (string) $duration, $m ) ) {
+			return 0;
+		}
+
+		$days    = isset( $m[3] ) ? (int) $m[3] : 0;
+		$hours   = isset( $m[4] ) ? (int) $m[4] : 0;
+		$minutes = isset( $m[5] ) ? (int) $m[5] : 0;
+		$seconds = isset( $m[6] ) ? (int) $m[6] : 0;
+
+		return $days * 86400 + $hours * 3600 + $minutes * 60 + $seconds;
+	}
+
 	private function get_priority( $post_type ) {
 		$priorities = array(
 			'page'    => '1.0',
@@ -358,20 +631,28 @@ class Generator {
 			$ids = array_merge( $ids, $this->get_outofstock_ids() );
 		}
 
+		// When cornerstone posts have a dedicated sitemap, keep them out of the
+		// per-type sitemaps so they aren't listed twice.
+		$settings = Settings::get_instance();
+		if ( $settings->get( 'cornerstone_separate_sitemap', '' ) === '1' && $this->cornerstone_has_entries() ) {
+			$ids = array_merge( $ids, $this->get_cornerstone_posts() );
+		}
+
 		return $ids;
 	}
 
 	private function post_type_has_entries( $post_type ) {
+		// Apply the same exclusions used when building a child sitemap (e.g.
+		// WooCommerce cart/checkout/out-of-stock, and cornerstone posts when
+		// they have a dedicated sitemap) so an index entry isn't emitted for a
+		// child sitemap that would be empty.
 		$args = array(
 			'post_type'      => $post_type,
 			'posts_per_page' => 1,
 			'post_status'    => 'publish',
 			'fields'         => 'ids',
+			'post__not_in'   => $this->get_excluded_ids(),
 		);
-
-		if ( 'product' === $post_type ) {
-			$args['post__not_in'] = $this->get_excluded_ids();
-		}
 
 		return get_posts( $args ) ? true : false;
 	}

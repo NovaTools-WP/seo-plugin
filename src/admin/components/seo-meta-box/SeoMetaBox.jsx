@@ -8,27 +8,46 @@ import React, {
 import { Upload, X } from "lucide-react";
 import * as api from "../../api";
 import useSeoCompleteness from "./hooks/useSeoCompleteness";
+import useAnalysis from "./hooks/useAnalysis";
+import useLinkSuggestions from "./hooks/useLinkSuggestions";
+import AnalysisSection from "./AnalysisSection";
+import LinkSuggestionsSection from "./LinkSuggestionsSection";
+import { isBlockEditor } from "./utils/editorContent";
 import SeoCompletenessGauge from "./SeoCompletenessGauge";
 import SeoPreview from "./SeoPreview";
+import SchemaSection from "./schema/SchemaSection";
 
 const TITLE_MAX = 60;
 const DESC_MAX = 160;
 const SAVE_DEBOUNCE_MS = 800;
+
+// Post meta key for the cornerstone flag. Mirrors
+// NovaToolsSEO\Admin\Cornerstone::META_KEY — kept in one place to avoid drift.
+const CORNERSTONE_META = "_wseo_cornerstone";
 
 // Variables that can be inserted into the SEO title. Mirrors the tokens
 // resolved server-side by NovaToolsSEO\Core\Tokens.
 const TITLE_TOKENS = [
   { token: "%%title%%", label: "Title", desc: "Post / page / product title" },
   { token: "%%sitename%%", label: "Site Name", desc: "Site name" },
-  { token: "%%sitedesc%%", label: "Tagline", desc: "Site tagline / description" },
+  {
+    token: "%%sitedesc%%",
+    label: "Tagline",
+    desc: "Site tagline / description",
+  },
   { token: "%%sep%%", label: "Separator", desc: "Separator (e.g. –)" },
   { token: "%%category%%", label: "Category", desc: "Primary category" },
-  { token: "%%page%%", label: "Page", desc: "Page number (on paginated archives)" },
+  {
+    token: "%%page%%",
+    label: "Page",
+    desc: "Page number (on paginated archives)",
+  },
 ];
 
 export default function SeoMetaBox() {
   const container = document.getElementById("wseo-react-meta-box");
   const postId = container?.dataset?.postId || "";
+  const postType = container?.dataset?.postType || "";
   const permalink = container?.dataset?.permalink || "";
   // Default title template (raw, with %%variables%%) and its resolved value,
   // computed server-side from General Settings for this post type. The template
@@ -75,6 +94,17 @@ export default function SeoMetaBox() {
     initialMeta._wseo_local_business === "1" ||
       initialMeta._wseo_local_business === true,
   );
+  const [cornerstone, setCornerstone] = useState(
+    initialMeta[CORNERSTONE_META] === "1" ||
+      initialMeta[CORNERSTONE_META] === true,
+  );
+  const [focusKeyphrase, setFocusKeyphrase] = useState(
+    initialMeta._wseo_focus_keyphrase || "",
+  );
+  const [schemaState, setSchemaState] = useState(() => {
+    const s = initialMeta._wseo_schema;
+    return s && typeof s === "object" && !Array.isArray(s) ? s : {};
+  });
   const [saving, setSaving] = useState(false);
 
   const selectImageMedia = (setter) => {
@@ -171,6 +201,25 @@ export default function SeoMetaBox() {
   const { checks, percentage, passed, total } =
     useSeoCompleteness(seoFormState);
 
+  // Live content/readability/keyphrase analysis. Re-runs (debounced) on
+  // keyphrase, title, description, or editor-body changes. In the block
+  // editor, analysis reflects the last saved content (no live DOM access).
+  const analysis = useAnalysis({
+    postId,
+    keyphrase: focusKeyphrase,
+    title: titleTouched ? title : defaultTitle,
+    description,
+  });
+
+  // Internal link suggestions (ranked by shared terms + focus keyphrase).
+  const {
+    suggestions: linkSuggestions,
+    loading: linksLoading,
+    error: linksError,
+  } = useLinkSuggestions({ postId, keyphrase: focusKeyphrase });
+
+  const blockEditor = isBlockEditor();
+
   const saveTimer = useRef(null);
   const latestFields = useRef({});
   const titleInputRef = useRef(null);
@@ -220,6 +269,7 @@ export default function SeoMetaBox() {
       _wseo_description: description,
       _wseo_canonical: canonical,
       _wseo_robots: robots,
+      _wseo_focus_keyphrase: focusKeyphrase,
       _wseo_og_title: ogTitle,
       _wseo_og_description: ogDesc,
       _wseo_og_image: ogImage,
@@ -228,6 +278,8 @@ export default function SeoMetaBox() {
       _wseo_twitter_description: twitterDesc,
       _wseo_twitter_image: twitterImage,
       _wseo_local_business: localBusiness ? "1" : "",
+      [CORNERSTONE_META]: cornerstone ? "1" : "",
+      _wseo_schema: schemaState,
     };
 
     if (saveTimer.current) clearTimeout(saveTimer.current);
@@ -251,6 +303,9 @@ export default function SeoMetaBox() {
     twitterDesc,
     twitterImage,
     localBusiness,
+    cornerstone,
+    focusKeyphrase,
+    schemaState,
     saveMeta,
   ]);
 
@@ -261,14 +316,19 @@ export default function SeoMetaBox() {
     if (!parent) return;
 
     Object.entries(fields).forEach(([name, value]) => {
+      // _wseo_schema is a nested object — serialize to JSON for the classic
+      // editor hidden-input fallback (mirrors FAQBuilder.jsx).
+      const strValue =
+        name === "_wseo_schema" ? JSON.stringify(value) : String(value);
+
       const input = parent.querySelector(`input[name="${name}"]`);
       if (input) {
-        input.value = value;
+        input.value = strValue;
       } else {
         const hidden = document.createElement("input");
         hidden.type = "hidden";
         hidden.name = name;
-        hidden.value = value;
+        hidden.value = strValue;
         parent.appendChild(hidden);
       }
     });
@@ -285,10 +345,55 @@ export default function SeoMetaBox() {
     twitterDesc,
     twitterImage,
     localBusiness,
+    cornerstone,
+    focusKeyphrase,
+    schemaState,
   ]);
 
   return (
     <div className="space-y-4">
+      {/* Focus keyphrase */}
+      <div>
+        <label className="block text-sm font-medium text-gray-700">
+          Focus Keyphrase
+        </label>
+        <input
+          type="text"
+          value={focusKeyphrase}
+          onChange={(e) => setFocusKeyphrase(e.target.value)}
+          className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
+          placeholder="e.g. sourdough bread"
+        />
+        <p className="mt-1 text-xs text-gray-400">
+          The phrase you want this page to rank for. Analysis updates as you
+          type.
+        </p>
+      </div>
+
+      {/* SEO / keyphrase analysis */}
+      <AnalysisSection
+        title="SEO Analysis"
+        score={analysis.seo?.score}
+        items={analysis.seo?.items}
+        loading={analysis.loading}
+      />
+
+      {/* Readability analysis */}
+      <AnalysisSection
+        title="Readability Analysis"
+        score={analysis.readability?.score}
+        items={analysis.readability?.items}
+        loading={analysis.loading}
+        note={blockEditor ? "reflects last saved content" : undefined}
+      />
+
+      {/* Internal link suggestions */}
+      <LinkSuggestionsSection
+        suggestions={linkSuggestions}
+        loading={linksLoading}
+        error={linksError}
+      />
+
       <SeoCompletenessGauge
         checks={checks}
         percentage={percentage}
@@ -355,15 +460,12 @@ export default function SeoMetaBox() {
         {/* Default-template indicator — shown while the field still holds the
             untouched default (not yet customized for this post). */}
         {!titleTouched && defaultTemplate && (
-          <p
-            className="mt-1.5 text-xs text-gray-400"
-            title={defaultTemplate}
-          >
+          <p className="mt-1.5 text-xs text-gray-400" title={defaultTemplate}>
             {defaultTitle ? (
               <>
                 Default template (resolves to{" "}
-                <span className="text-gray-500">{defaultTitle}</span>) — edit
-                to customize this post.
+                <span className="text-gray-500">{defaultTitle}</span>) — edit to
+                customize this post.
               </>
             ) : (
               <>
@@ -509,6 +611,12 @@ export default function SeoMetaBox() {
         </div>
       </details>
 
+      <SchemaSection
+        schemaState={schemaState}
+        setSchemaState={setSchemaState}
+        postType={postType}
+      />
+
       <div className="flex items-center gap-2">
         <input
           type="checkbox"
@@ -520,6 +628,22 @@ export default function SeoMetaBox() {
           Output Local Business Schema on this page
         </label>
       </div>
+
+      {/* Cornerstone applies to posts/pages (where the list-table column,
+          filter, and dedicated sitemap are wired) — not products. */}
+      {postType !== "product" && (
+        <div className="flex items-center gap-2">
+          <input
+            type="checkbox"
+            checked={cornerstone}
+            onChange={(e) => setCornerstone(e.target.checked)}
+            className="h-4 w-4 rounded border-gray-300"
+          />
+          <label className="text-sm text-gray-700">
+            Mark as cornerstone content
+          </label>
+        </div>
+      )}
 
       {saving && <p className="text-xs text-gray-400">Saving...</p>}
     </div>

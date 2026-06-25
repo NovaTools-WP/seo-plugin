@@ -11,6 +11,7 @@ import Integrations from "./pages/Integrations";
 import WooCommerceSEO from "./pages/WooCommerceSEO";
 import Tools from "./pages/Tools";
 import GEO from "./pages/GEO";
+import SetupWizard from "./pages/SetupWizard";
 import ProductSeoTab from "./components/product-seo-tab/ProductSeoTab";
 
 const navItems = [
@@ -89,6 +90,7 @@ window.NovaToolsAddons["novatools-seo"] = {
   WooCommerceSEO: withLayout(WooCommerceSEO),
   Tools: withLayout(Tools),
   GEO: withLayout(GEO),
+  SetupWizard: withLayout(SetupWizard),
 };
 
 // Mount ProductSeoTab into WooCommerce product data panel

@@ -12,6 +12,7 @@ import Integrations from "./pages/Integrations";
 import WooCommerceSEO from "./pages/WooCommerceSEO";
 import Tools from "./pages/Tools";
 import GEO from "./pages/GEO";
+import SetupWizard from "./pages/SetupWizard";
 import SeoMetaBox from "./components/seo-meta-box/SeoMetaBox";
 import ProductSeoTab from "./components/product-seo-tab/ProductSeoTab";
 import "./index.css";
@@ -33,6 +34,7 @@ if (container) {
           <Route path="/woo-seo" element={<WooCommerceSEO />} />
           <Route path="/tools" element={<Tools />} />
           <Route path="/geo" element={<GEO />} />
+          <Route path="/setup-wizard" element={<SetupWizard />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </Layout>

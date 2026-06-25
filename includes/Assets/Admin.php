@@ -75,6 +75,8 @@ class Admin {
 		return array(
 			'apiUrl'         => rest_url(),
 			'siteUrl'        => home_url( '/' ),
+			'siteName'       => get_bloginfo( 'name' ),
+			'siteTagline'    => get_bloginfo( 'description' ),
 			'isAdmin'        => is_admin(),
 			'version'        => NOVATOOLS_SEO_VERSION,
 			'nonce'          => wp_create_nonce( 'wp_rest' ),
