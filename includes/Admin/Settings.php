@@ -55,6 +55,7 @@ class Settings {
 			'wseo_social_pinterest_rich_pins' => '1',
 			'wseo_sitemap_enabled'           => '1',
 			'wseo_sitemap_ping_enabled'      => '1',
+			'wseo_sitemap_product_images'    => '1',
 			'wseo_outofstock_threshold'      => '30',
 			'wseo_robots_txt_content'        => '',
 			'wseo_license_key'               => '',
@@ -122,6 +123,7 @@ class Settings {
 			case 'wseo_social_pinterest_rich_pins':
 			case 'wseo_sitemap_enabled':
 			case 'wseo_sitemap_ping_enabled':
+			case 'wseo_sitemap_product_images':
 			case 'wseo_license_key':
 			case 'wseo_indexnow_enabled':
 			case 'wseo_indexnow_api_key':

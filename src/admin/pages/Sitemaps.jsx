@@ -6,6 +6,7 @@ export default function Sitemaps() {
   const [enabled, setEnabled] = useState(true);
   const [pingEnabled, setPingEnabled] = useState(true);
   const [cornerstoneSeparate, setCornerstoneSeparate] = useState(false);
+  const [imagesEnabled, setImagesEnabled] = useState(true);
   const [threshold, setThreshold] = useState(30);
   const [rebuilding, setRebuilding] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -18,6 +19,7 @@ export default function Sitemaps() {
       setEnabled(s.wseo_sitemap_enabled !== "0");
       setPingEnabled(s.wseo_sitemap_ping_enabled !== "0");
       setCornerstoneSeparate(s.wseo_cornerstone_separate_sitemap === "1");
+      setImagesEnabled(s.wseo_sitemap_product_images !== "0");
       if (s.wseo_outofstock_threshold !== undefined) {
         setThreshold(parseInt(s.wseo_outofstock_threshold, 10) || 0);
       }
@@ -68,6 +70,26 @@ export default function Sitemaps() {
         checked
           ? "Cornerstone posts moved to a separate sitemap."
           : "Cornerstone posts included in the main sitemap.",
+      );
+    } catch {
+      setMessage("Error updating setting.");
+    }
+    setSaving(false);
+  }
+
+  async function toggleImages(checked) {
+    setImagesEnabled(checked);
+    setSaving(true);
+    setMessage("");
+    try {
+      await api.post("/settings", {
+        wseo_sitemap_product_images: checked ? "1" : "0",
+      });
+      await api.post("/sitemap/rebuild", {});
+      setMessage(
+        "Product images " +
+          (checked ? "enabled" : "disabled") +
+          ". Sitemap rebuilt.",
       );
     } catch {
       setMessage("Error updating setting.");
@@ -179,6 +201,27 @@ export default function Sitemaps() {
                 {rebuilding ? "Rebuilding..." : "Rebuild Sitemaps Now"}
               </button>
             </div>
+
+            {hasWooCommerce && (
+              <div className="flex items-center justify-between rounded-lg border border-gray-200 bg-white p-4">
+                <div>
+                  <p className="text-sm font-medium text-gray-900">
+                    Product Images
+                  </p>
+                  <p className="text-xs text-gray-500">
+                    Include WooCommerce product images (featured, gallery,
+                    variations) in the product sitemap
+                  </p>
+                </div>
+                <Switch.Root
+                  checked={imagesEnabled}
+                  onCheckedChange={toggleImages}
+                  className="relative h-6 w-11 rounded-full bg-gray-200 data-[state=checked]:bg-blue-600"
+                >
+                  <Switch.Thumb className="block h-5 w-5 translate-x-0.5 rounded-full bg-white shadow transition-transform data-[state=checked]:translate-x-[22px]" />
+                </Switch.Root>
+              </div>
+            )}
 
             {hasWooCommerce && (
               <div className="rounded-lg border border-gray-200 bg-white p-4">

@@ -31,13 +31,31 @@ class Generator {
 	public function init() {
 		add_action( 'init', array( $this, 'add_rewrite_rules' ) );
 		add_filter( 'query_vars', array( $this, 'add_query_vars' ) );
-		add_action( 'template_redirect', array( $this, 'handle_sitemap_request' ) );
+		add_action( 'template_redirect', array( $this, 'handle_sitemap_request' ), 0 );
 		add_action( 'wseo_sitemap_rebuild', array( $this, 'rebuild_all' ) );
 		add_action( 'save_post', array( $this, 'schedule_rebuild' ) );
 		add_action( 'delete_post', array( $this, 'schedule_rebuild' ) );
 		add_action( 'created_term', array( $this, 'schedule_rebuild' ) );
 		add_action( 'edited_term', array( $this, 'schedule_rebuild' ) );
 		add_action( 'delete_term', array( $this, 'schedule_rebuild' ) );
+
+		// Disable WP core sitemaps (wp-sitemap.xml) while our own sitemap is
+		// enabled, to avoid serving two competing sitemap indexes.
+		add_filter( 'wp_sitemaps_enabled', array( $this, 'maybe_disable_core_sitemaps' ) );
+	}
+
+	/**
+	 * Disable WordPress core sitemaps when this plugin's sitemap is enabled.
+	 *
+	 * @param bool $enabled Whether core sitemaps are enabled.
+	 * @return bool
+	 */
+	public function maybe_disable_core_sitemaps( $enabled ) {
+		if ( '1' === Settings::get_instance()->get( 'sitemap_enabled', '1' ) ) {
+			return false;
+		}
+
+		return $enabled;
 	}
 
 	public function add_rewrite_rules() {
@@ -51,6 +69,12 @@ class Generator {
 	}
 
 	public function handle_sitemap_request() {
+		// Respect the master sitemap toggle. When disabled, do not serve our
+		// sitemap (lets core sitemaps fall back via maybe_disable_core_sitemaps).
+		if ( '1' !== Settings::get_instance()->get( 'sitemap_enabled', '1' ) ) {
+			return;
+		}
+
 		$sitemap = get_query_var( 'wseo_sitemap' );
 		if ( empty( $sitemap ) ) {
 			return;
@@ -222,11 +246,12 @@ class Generator {
 			return $this->get_cornerstone_sitemap_xml();
 		}
 
-		$is_product = ( 'product' === $type );
+		$is_product     = ( 'product' === $type );
+		$include_images = $is_product && '1' === Settings::get_instance()->get( 'sitemap_product_images', '1' );
 
 		$xml = '<?xml version="1.0" encoding="UTF-8"?>' . "\n";
 		$xml .= '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"';
-		if ( $is_product ) {
+		if ( $include_images ) {
 			$xml .= ' xmlns:image="http://www.google.com/schemas/sitemap-image/1.1"';
 		}
 		$xml .= '>' . "\n";
@@ -252,7 +277,7 @@ class Generator {
 				}
 
 				foreach ( $posts as $post ) {
-					$product_id = $is_product ? $post->ID : 0;
+					$product_id = $include_images ? $post->ID : 0;
 					$xml .= $this->get_url_entry( get_permalink( $post ), $post->post_modified_gmt, 'weekly', $this->get_priority( $type ), $product_id );
 				}
 

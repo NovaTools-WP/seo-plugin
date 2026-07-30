@@ -38,6 +38,7 @@ class Install {
 			'wseo_social_twitter_card_type'  => 'summary_large_image',
 			'wseo_social_twitter_site'       => '',
 			'wseo_sitemap_enabled'           => '1',
+			'wseo_sitemap_product_images'    => '1',
 			'wseo_robots_txt_content'        => "User-agent: *\nDisallow: /wp-admin/\nDisallow: /wp-includes/\nDisallow: /wp-login.php\nDisallow: /wp-register.php\nDisallow: /trackback/\nDisallow: /feed/\nDisallow: /comments/",
 			'wseo_log_retention_days'        => '30',
 		);

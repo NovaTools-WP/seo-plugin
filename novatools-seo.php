@@ -19,6 +19,7 @@
 use NovaToolsSEO\Core\Install;
 use NovaToolsSEO\Core\DependencyCheck;
 use NovaToolsSEO\Database\Migrations\Redirects;
+use NovaToolsSEO\Sitemaps\Generator;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -33,8 +34,21 @@ function novatools_seo_activate() {
 	Install::get_instance()->init();
 	// Backfill link counts for existing content (computed on save for new posts).
 	NovaToolsSEO\Analysis\LinkCounter::get_instance()->backfill();
+
+	// Register and persist the sitemap rewrite rules so the sitemap URLs
+	// resolve immediately without a manual permalink flush.
+	Generator::get_instance()->add_rewrite_rules();
+	flush_rewrite_rules();
 }
 register_activation_hook( __FILE__, 'novatools_seo_activate' );
+
+/**
+ * Flush rewrite rules on deactivation so the sitemap rules are removed.
+ */
+function novatools_seo_deactivate() {
+	flush_rewrite_rules();
+}
+register_deactivation_hook( __FILE__, 'novatools_seo_deactivate' );
 
 /**
  * Run schema migrations on update without reactivation.
